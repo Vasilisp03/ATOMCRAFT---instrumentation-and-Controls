@@ -8,11 +8,11 @@ typing 'git' gives a list of commands (for anyone unfamiliar)
 If using mac then all dependencies can be installed using brew
 
 ```console
-sudo brew bundle install
+brew bundle install
 ```
 
 if using windows or linux all dependencies can be installed using pip
 
 ```console
-sudo pip install -r requirements.txt
+pip install -r requirements.txt
 ```
