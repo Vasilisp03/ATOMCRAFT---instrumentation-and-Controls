@@ -5,9 +5,14 @@ Instrumentation and controls repository, programs and code
 typing 'git' gives a list of commands (for anyone unfamiliar)
 
 # Dependencies
-current dependencies include:
-- python3
-- sqlite3
-- python-tk
+If using mac then all dependencies can be installed using brew
 
-will look into implementing a makefile or something so that anyone who clones the repo can install the dependencies and use the repo
+```console
+sudo brew bundle install
+```
+
+if using windows or linux all dependencies can be installed using pip
+
+```console
+sudo pip install -r requirements.txt
+```

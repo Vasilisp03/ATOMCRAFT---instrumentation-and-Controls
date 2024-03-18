@@ -1,0 +1,10 @@
+# Python packages
+sqlite
+git
+jupyterlab
+networkx
+
+# Specific Python versions (if needed)
+python-tk
+
+# Note: Python itself (python@3.12) is managed separately from pip, so it's not included here.
