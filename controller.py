@@ -10,6 +10,8 @@ def clear():
     conn.commit()
     conn.close()
 
+    update_listbox()
+
 
 
 def create_database():
@@ -33,6 +35,8 @@ def on_submit():
     c.execute("INSERT INTO names (name) VALUES (?)", (name,))
     conn.commit()
     conn.close()
+
+    update_listbox()
 
 def update_listbox():
     conn = sqlite3.connect("names.db")
