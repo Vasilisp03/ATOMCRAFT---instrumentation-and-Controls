@@ -12,8 +12,9 @@ brew bundle install
 ```
 
 if using windows or linux all dependencies can be installed using pip. 
-Note: See Vasilis with any issues
 
 ```console
 pip install -r requirements.txt
 ```
+
+Note: See Vasilis with any issues
