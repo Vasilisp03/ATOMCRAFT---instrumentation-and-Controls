@@ -10,16 +10,16 @@ from collections import defaultdict
 import heapq
 
 # Receive address
-ROUTER_PORT = 1200
+ROUTER_PORT = 1300
 HOST = '127.0.0.1'
 
 # Send address
 ROUTER_PORT2 = 1200
-HOST2 = '192.168.2.99'
+HOST2 = '127.0.0.1'
 
 # --------------------------------------------------------------------------------------------------------- #
 
-data_received = {}
+data_received = []
 num_peripherals = 0
 
 # routing_table = []
@@ -42,7 +42,7 @@ def receive_from_pynq():
     while True:
         msg, c_add = s_sock.recvfrom(1024)
         decoded_lsp = msg.decode()
-        # print(decoded_lsp)
+        print(f"\n+received {decoded_lsp}")
 
         data_received.append(decoded_lsp)
 
@@ -62,8 +62,8 @@ def send_instructions():
 
     # should just send a packet with a random number that I type into command line
     while(True):
-        input_command = input("Send a number to the pynq")
-        print("sending",input_command)
+        input_command = input("Send a number to the pynq: ")
+        print("-sending",input_command)
         packet = input_command.encode()
         send_address = (HOST, ROUTER_PORT)
         c_sock.sendto(packet, send_address)
@@ -96,6 +96,7 @@ if __name__ == "__main__":
     # start threads running
     try:
         recieve_data.start()
+        time.sleep(1)
         send_command.start()
 
     except KeyboardInterrupt:
