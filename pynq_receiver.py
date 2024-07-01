@@ -42,12 +42,6 @@ def receive_commands():
 
         data_received.append(decoded_lsp)
 
-        # if decoded_lsp[:9] == 'Heartbeat':
-        #     if network:
-        #         network[decoded_lsp[-1]]['last_heard'] = time.time()
-        # elif decoded_lsp not in routing_table:
-        #     routing_table.append(decoded_lsp)
-
 # --------------------------------------------------------------------------------------------------------- #
 
 # this is code for the pynq probably that is sending packets, however can be used here to send
@@ -68,7 +62,7 @@ def send_data():
 
     # just for testing sending and receiving a packet to and from pynq
     while(True):
-        input_command = input("Send a number to the pc: ")
+        input_command = input("")
         print("-sending",input_command)
         packet = input_command.encode()
         send_address = (HOST, ROUTER_PORT)
@@ -81,11 +75,6 @@ if __name__ == "__main__":
     # set up all threads that we want to exist
     recieve_command = threading.Thread(target=receive_commands)
     send_data = threading.Thread(target = send_data, args = ())
-
-    # send_thread = threading.Thread(target = send_neighbours, args = ())
-    # compute_djisktras = threading.Thread(target = Djisktras_routing, args = (ROUTER_ID))
-    # send_hb_thread = threading.Thread(target = send_heartbeat, args = ())
-    # check_hb_thread = threading.Thread(target = monitor_router_activity, args = ())
 
     # start threads running
     try:
