@@ -51,22 +51,14 @@ def send_data():
     c_sock = socket(AF_INET, SOCK_DGRAM)
 
     # should just send a packet with a random number that I type into command line
-    # while(True):
-    #     data_sent = str(random.randint(10, 20))
-    #     print("sending",data_sent)
-    #     packet = data_sent.encode()
-    #     send_address = (HOST, ROUTER_PORT)
-    #     c_sock.sendto(packet, send_address)
-    #     time.sleep(0.1)
-
-
-    # just for testing sending and receiving a packet to and from pynq
     while(True):
-        input_command = input("")
-        print("-sending",input_command)
-        packet = input_command.encode()
+        data_sent = str(random.randint(10, 20))
+        time.sleep(3)
+        print("sending",data_sent)
+        packet = data_sent.encode()
         send_address = (HOST, ROUTER_PORT)
         c_sock.sendto(packet, send_address)
+        time.sleep(0.1)
 
 # --------------------------------------------------------------------------------------------------------- #
 
