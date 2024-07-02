@@ -1,5 +1,5 @@
-# plan here is to write python code that will recieve the sockets sent from the pynq and then.
-# if that is able to recieve quickly then we can use that in the controller.py file to actually
+# plan here is to write python code that will receive the sockets sent from the pynq and then.
+# if that is able to receive quickly then we can use that in the controller.py file to actually
 # create a nice bit of software.
 
 import sys
@@ -22,6 +22,7 @@ HOST2 = '127.0.0.1'
 
 data_received = []
 num_peripherals = 0
+running = 1
 
 # --------------------------------------------------------------------------------------------------------- #
 
@@ -35,7 +36,7 @@ def receive_commands():
     print(f'Listening on port:{ROUTER_PORT2}')
 
     # proccess data this is not right just very placeholder
-    while True:
+    while running:
         msg, c_add = s_sock.recvfrom(1024)
         decoded_lsp = msg.decode()
         print(f"\n+received {decoded_lsp}")
@@ -51,7 +52,7 @@ def send_data():
     c_sock = socket(AF_INET, SOCK_DGRAM)
 
     # should just send a packet with a random number that I type into command line
-    while(True):
+    while running:
         data_sent = str(random.randint(10, 20))
         time.sleep(3)
         print("sending",data_sent)
@@ -65,15 +66,15 @@ def send_data():
 if __name__ == "__main__":
 
     # set up all threads that we want to exist
-    recieve_command = threading.Thread(target=receive_commands)
-    send_data = threading.Thread(target = send_data, args = ())
+    receive_command = threading.Thread(target=receive_commands)
+    send_data = threading.Thread(target = send_data)
 
     # start threads running
     try:
-        recieve_command.start()
+        receive_command.start()
         time.sleep(1)
         send_data.start()
 
     except KeyboardInterrupt:
-        recieve_command.join()
+        receive_command.join()
         send_data.join()
