@@ -37,8 +37,8 @@ def receive_from_pynq():
     s_sock.bind(address)
     print(f'Listening on port:{ROUTER_PORT2}')
 
-    # proccess data this is not right just very placeholder
-    while running == 1:
+    # process data this is not right just very placeholder
+    while running:
         msg, c_add = s_sock.recvfrom(1024)
         decoded_lsp = msg.decode()
         print(f"\n+received {decoded_lsp}")
@@ -75,10 +75,7 @@ def create_database():
     conn = sqlite3.connect("names.db")
     c = conn.cursor()
 
-    c.execute("""CREATE TABLE IF NOT EXISTS names (
-                    id INTEGER PRIMARY KEY,
-                    name TEXT
-                )""")
+    c.execute("""CREATE TABLE IF NOT EXISTS names (id INTEGER PRIMARY KEY,name TEXT)""")
     conn.commit()
     conn.close()
 
@@ -110,43 +107,41 @@ def update_listbox():
         listbox.insert(tk.END, row[1])
 
     conn.close()
+    
+# --------------------------------------------------------------------------------------------------------- #
+    
+def update_plot():
+    # global plot1
+    # global y
+    # y = data_received
+    # plot1.clear()
+    # plot1.plot(y)
+    pass
 
 # --------------------------------------------------------------------------------------------------------- #
 
-def plot(): 
-  
-    # the figure that will contain the plot 
-    fig = Figure(figsize = (5, 5), dpi = 100) 
-  
-    # list of squares 
+def plot():
+    global plot1
+    global y
+    fig = Figure(fig_size = (5, 5), dpi = 100) 
     y = data_received
-  
-    # adding the subplot 
     plot1 = fig.add_subplot(111) 
-  
-    # plotting the graph 
     plot1.plot(y) 
-  
-    # creating the Tkinter canvas 
-    # containing the Matplotlib figure 
     canvas = FigureCanvasTkAgg(fig, master = app)   
     canvas.draw() 
-  
-    # placing the canvas on the Tkinter app 
     canvas.get_tk_widget().pack() 
-  
-    # creating the Matplotlib toolbar 
     toolbar = NavigationToolbar2Tk(canvas, app) 
     toolbar.update() 
-  
-    # placing the toolbar on the Tkinter app 
-    canvas.get_tk_widget().pack() 
+    canvas.get_tk_widget().pack()
+    
+    # app.after(1000, canvas.)
 
 # --------------------------------------------------------------------------------------------------------- #
 
 def exit():
     global running
     running = 0
+    receive_data.join()
     app.destroy()
 
 
@@ -176,6 +171,7 @@ submit_button.pack()
 # button for graphs
 plot_button = tk.Button(app, command = plot, text = "Plot")
 plot_button.pack()
+# update_plot()
 
 clear_data_button = tk.Button(app, text="Clear data", command = clear)
 clear_data_button.pack()
@@ -183,9 +179,9 @@ clear_data_button.pack()
 exit_button = tk.Button(app, text="Exit (gracefully)", command = exit)
 exit_button.pack()
 
-# start app window
+# --------------------------------------------------------------------------------------------------------- #
+
 create_database()
-app.mainloop()
 
 # --------------------------------------------------------------------------------------------------------- #
 
@@ -196,5 +192,9 @@ if __name__ == "__main__":
 
     # start threads running
     receive_data.start()
+    
+    # start app window
+    app.mainloop()
+
 
         
