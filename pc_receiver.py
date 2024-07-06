@@ -30,6 +30,7 @@ running = 1
 
 def receive_from_pynq():
     global data_received
+    global running
 
     # set up listening sockets
     s_sock = socket(AF_INET, SOCK_DGRAM)
@@ -38,12 +39,14 @@ def receive_from_pynq():
     print(f'Listening on port:{ROUTER_PORT2}')
 
     # process data this is not right just very placeholder
-    while running:
+    while running != 0:
         msg, c_add = s_sock.recvfrom(1024)
         decoded_lsp = msg.decode()
         print(f"\n+received {decoded_lsp}")
 
         data_received.append(decoded_lsp)
+    
+    print("no longer listening for pynq")
 
 # --------------------------------------------------------------------------------------------------------- #
 
@@ -138,11 +141,17 @@ def plot():
 
 # --------------------------------------------------------------------------------------------------------- #
 
+def check_threads():
+    global app
+    if not receive_data.is_alive():
+        app.destroy()
+    else:app.after(100, check_threads)
+# --------------------------------------------------------------------------------------------------------- #
+
 def exit():
     global running
     running = 0
-    receive_data.join()
-    app.destroy()
+    check_threads()
 
 
 # --------------------------------------------------------------------------------------------------------- #
@@ -186,7 +195,6 @@ create_database()
 # --------------------------------------------------------------------------------------------------------- #
 
 if __name__ == "__main__":
-
     # set up all threads that we want to exist
     receive_data = threading.Thread(target = receive_from_pynq)
 
