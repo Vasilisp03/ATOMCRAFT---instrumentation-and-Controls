@@ -2,7 +2,7 @@
 # if that is able to receive quickly then we can use that in the controller.py file to actually
 # create a nice bit of software.
 
-import sys
+import contextlib
 from socket import *
 import threading
 import time
@@ -36,17 +36,16 @@ def receive_from_pynq():
     s_sock = socket(AF_INET, SOCK_DGRAM)
     address = (HOST2, ROUTER_PORT2)
     s_sock.bind(address)
+    s_sock.settimeout(1)
     print(f'Listening on port:{ROUTER_PORT2}')
 
     # process data this is not right just very placeholder
     while running != 0:
-        msg, c_add = s_sock.recvfrom(1024)
-        decoded_lsp = msg.decode()
-        print(f"\n+received {decoded_lsp}")
-
-        data_received.append(decoded_lsp)
-    
-    print("no longer listening for pynq")
+        with contextlib.suppress(timeout):
+            msg, c_add = s_sock.recvfrom(1024)
+            decoded_lsp = msg.decode()
+            print(f"\n+received {decoded_lsp}")
+            data_received.append(decoded_lsp)
 
 # --------------------------------------------------------------------------------------------------------- #
 
@@ -114,19 +113,22 @@ def update_listbox():
 # --------------------------------------------------------------------------------------------------------- #
     
 def update_plot():
-    # global plot1
-    # global y
-    # y = data_received
-    # plot1.clear()
-    # plot1.plot(y)
-    pass
+    global plot1
+    global y
+    y = data_received
+    plot1.clear()
+    plot1.plot(y)
+    app.update()
+    
+    app.after(100, update_plot)
+    # pass
 
 # --------------------------------------------------------------------------------------------------------- #
 
 def plot():
     global plot1
     global y
-    fig = Figure(fig_size = (5, 5), dpi = 100) 
+    fig = Figure(figsize = (5, 5), dpi = 100) 
     y = data_received
     plot1 = fig.add_subplot(111) 
     plot1.plot(y) 
@@ -137,7 +139,7 @@ def plot():
     toolbar.update() 
     canvas.get_tk_widget().pack()
     
-    # app.after(1000, canvas.)
+    app.after(1000, update_plot)
 
 # --------------------------------------------------------------------------------------------------------- #
 
