@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "matplotlib": "^1.0.0"
+    "matplotlib": "^1.0.0",
+    "scipy": "^0.1.4"
   }
 }

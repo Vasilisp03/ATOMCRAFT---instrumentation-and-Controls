@@ -54,7 +54,7 @@ def send_data():
     # should just send a packet with a random number that I type into command line
     while running:
         data_sent = str(random.randint(10, 20))
-        time.sleep(3)
+        time.sleep(0.01)
         print("sending",data_sent)
         packet = data_sent.encode()
         send_address = (HOST, ROUTER_PORT)

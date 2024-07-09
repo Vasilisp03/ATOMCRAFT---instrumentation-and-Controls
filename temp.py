@@ -20,7 +20,7 @@ class Application(tk.Tk):
 
     def auto_plot(self, ax):
         c = ['r', 'b', 'g']
-        for j in range(5):
+        for _ in range(5):
             ax.clear()
 
             for i in range(3):

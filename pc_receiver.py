@@ -10,7 +10,9 @@ from collections import defaultdict
 import tkinter as tk
 import sqlite3
 from matplotlib.figure import Figure 
-from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk) 
+from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
+import numpy as np
+from scipy.signal import savgol_filter 
 
 # Receive address
 ROUTER_PORT = 1300
@@ -19,6 +21,9 @@ HOST = '127.0.0.1'
 # Send address
 ROUTER_PORT2 = 1200
 HOST2 = '127.0.0.1'
+
+# Other constants
+PLOT_UPDATE_RATE = 10
 
 # --------------------------------------------------------------------------------------------------------- #
 
@@ -45,7 +50,7 @@ def receive_from_pynq():
             msg, c_add = s_sock.recvfrom(1024)
             decoded_lsp = msg.decode()
             print(f"\n+received {decoded_lsp}")
-            data_received.append(decoded_lsp)
+            data_received.append(int(decoded_lsp))
 
 # --------------------------------------------------------------------------------------------------------- #
 
@@ -116,22 +121,27 @@ def update_plot():
     global plot1
     global y
     y = data_received
+    smoothed_y = savgol_filter(y, 7, 2)
     plot1.clear()
-    plot1.plot(y)
-    app.update()
+    plot1.plot(y, label = 'raw signal', color = 'blue')
+    plot1.plot(smoothed_y, label = 'smoothed signal', color = 'red') 
+    plot1.figure.canvas.draw_idle()
     
-    app.after(100, update_plot)
-    # pass
+    app.after(PLOT_UPDATE_RATE, update_plot)
 
 # --------------------------------------------------------------------------------------------------------- #
 
 def plot():
     global plot1
     global y
-    fig = Figure(figsize = (5, 5), dpi = 100) 
+    fig = Figure(figsize = (8, 5), dpi = 100) 
     y = data_received
+    smoothed_y = savgol_filter(y, 7, 2)
     plot1 = fig.add_subplot(111) 
-    plot1.plot(y) 
+    plot1.plot(y, label = 'raw signal', color = 'blue')
+    plot1.plot(smoothed_y, label = 'smoothed signal', color = 'red') 
+    plot1.set_xlim(0, len(y))
+    plot1.set_ylim(min(y), max(y))
     canvas = FigureCanvasTkAgg(fig, master = app)   
     canvas.draw() 
     canvas.get_tk_widget().pack() 
@@ -139,7 +149,7 @@ def plot():
     toolbar.update() 
     canvas.get_tk_widget().pack()
     
-    app.after(1000, update_plot)
+    app.after(PLOT_UPDATE_RATE, update_plot)
 
 # --------------------------------------------------------------------------------------------------------- #
 
