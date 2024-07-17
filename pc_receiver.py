@@ -23,7 +23,7 @@ ROUTER_PORT2 = 1200
 HOST2 = '127.0.0.1'
 
 # Other constants
-PLOT_UPDATE_RATE = 10
+PLOT_UPDATE_RATE = 9
 
 # --------------------------------------------------------------------------------------------------------- #
 
@@ -49,7 +49,7 @@ def receive_from_pynq():
         with contextlib.suppress(timeout):
             msg, c_add = s_sock.recvfrom(1024)
             decoded_lsp = msg.decode()
-            print(f"\n+received {decoded_lsp}")
+            # print(f"\n+received {decoded_lsp}")
             data_received.append(int(decoded_lsp))
 
 # --------------------------------------------------------------------------------------------------------- #
@@ -58,7 +58,7 @@ def receive_from_pynq():
 # information for control.
 def send_instructions(command):
     c_sock = socket(AF_INET, SOCK_DGRAM)
-    print("-sending",command)
+    # print("-sending",command)
     packet = command.encode()
     send_address = (HOST, ROUTER_PORT)
     c_sock.sendto(packet, send_address)
@@ -192,7 +192,6 @@ submit_button.pack()
 # button for graphs
 plot_button = tk.Button(app, command = plot, text = "Plot")
 plot_button.pack()
-# update_plot()
 
 clear_data_button = tk.Button(app, text="Clear data", command = clear)
 clear_data_button.pack()
