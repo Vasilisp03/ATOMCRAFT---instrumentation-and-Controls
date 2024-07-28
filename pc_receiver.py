@@ -22,6 +22,10 @@ HOST = '127.0.0.1'
 ROUTER_PORT2 = 1200
 HOST2 = '127.0.0.1'
 
+# Send current control address
+ROUTER_PORT3 = 1400
+HOST2 = '127.0.0.1'
+
 # Other constants
 PLOT_UPDATE_RATE = 9
 
@@ -57,10 +61,23 @@ def receive_from_pynq():
 # this is code for the pynq probably that is sending packets, however can be used here to send
 # information for control.
 def send_instructions(command):
+    if isinstance(command, list):
+        command = ' '.join(command)
     c_sock = socket(AF_INET, SOCK_DGRAM)
     # print("-sending",command)
     packet = command.encode()
     send_address = (HOST, ROUTER_PORT)
+    c_sock.sendto(packet, send_address)
+
+# --------------------------------------------------------------------------------------------------------- #
+
+def send_waveform(command):
+    if isinstance(command, list):
+        command = ' '.join(command)
+    c_sock = socket(AF_INET, SOCK_DGRAM)
+    # print("-sending",command)
+    packet = command.encode()
+    send_address = (HOST, ROUTER_PORT3)
     c_sock.sendto(packet, send_address)
 
 # --------------------------------------------------------------------------------------------------------- #
@@ -74,7 +91,7 @@ def clear():
     conn.commit()
     conn.close()
 
-    update_listbox()
+    # update_listbox()
 
 # --------------------------------------------------------------------------------------------------------- #
 
@@ -89,31 +106,47 @@ def create_database():
 # --------------------------------------------------------------------------------------------------------- #
 
 def on_submit():
-    name = entry.get()
-    send_instructions(name)
-    conn = sqlite3.connect("names.db")
-    c = conn.cursor()
+    command = entry.get()
+    send_instructions(command)
+    # conn = sqlite3.connect("names.db")
+    # c = conn.cursor()
 
-    c.execute("INSERT INTO names (name) VALUES (?)", (name,))
-    conn.commit()
-    conn.close()
+    # c.execute("INSERT INTO names (name) VALUES (?)", (name,))
+    # conn.commit()
+    # conn.close()
 
-    update_listbox()
+    # update_listbox()
 
 # --------------------------------------------------------------------------------------------------------- #
 
-def update_listbox():
-    conn = sqlite3.connect("names.db")
-    c = conn.cursor()
+def on_submit_waveform():
+    waveform = tf_entry.get()
+    # lets do linear interpolation here i think and then send the list of points
+    send_waveform(waveform)
+    
+    # conn = sqlite3.connect("names.db")
+    # c = conn.cursor()
 
-    c.execute("SELECT * FROM names")
-    rows = c.fetchall()
+    # c.execute("INSERT INTO names (name) VALUES (?)", (name,))
+    # conn.commit()
+    # conn.close()
 
-    listbox.delete(0, tk.END)
-    for row in rows:
-        listbox.insert(tk.END, row[1])
+    # update_listbox()
 
-    conn.close()
+# --------------------------------------------------------------------------------------------------------- #
+
+# def update_listbox():
+#     conn = sqlite3.connect("names.db")
+#     c = conn.cursor()
+
+#     c.execute("SELECT * FROM names")
+#     rows = c.fetchall()
+
+#     listbox.delete(0, tk.END)
+#     for row in rows:
+#         listbox.insert(tk.END, row[1])
+
+#     conn.close()
     
 # --------------------------------------------------------------------------------------------------------- #
     
@@ -174,30 +207,44 @@ app.title("AtomCraft Controller")
 app.geometry("1280x720")
 
 # just a simple label
-label = tk.Label(app, text="Enter anything")
+label = tk.Label(app, text="Enter 4 points to outline tf coil current (1st is commands, 2nd is waveform)")
 label.pack()
 
 entry = tk.Entry(app)
 entry.pack()
 
+tf_entry = tk.Entry(app)
+tf_entry.pack()
+
 # list of whatever
-listbox = tk.Listbox(app)
-listbox.pack()
-update_listbox()
+# listbox = tk.Listbox(app)
+# listbox.pack()
+# update_listbox()
 
 # simple button to submit whatever
 submit_button = tk.Button(app, text="send packet", command = on_submit)
 submit_button.pack()
 
+tf_submit_button = tk.Button(app, text="send waveform", command = on_submit_waveform)
+tf_submit_button.pack()
+
 # button for graphs
 plot_button = tk.Button(app, command = plot, text = "Plot")
 plot_button.pack()
 
-clear_data_button = tk.Button(app, text="Clear data", command = clear)
-clear_data_button.pack()
+# clear_data_button = tk.Button(app, text="Clear data", command = clear)
+# clear_data_button.pack()
 
 exit_button = tk.Button(app, text="Exit (gracefully)", command = exit)
 exit_button.pack()
+
+selected_value = tk.StringVar()
+selected_value.set("TF coil current") 
+
+# trying to implement a dropdown menu thats on pause tho
+# dd_menu = ["TF coil current", "Temperature", "etc..."]
+# dropdown = tk.OptionMenu(app, selected_value, *options, command=on_select)
+# dropdown.pack()
 
 # --------------------------------------------------------------------------------------------------------- #
 

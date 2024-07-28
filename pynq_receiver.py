@@ -14,8 +14,12 @@ import random
 ROUTER_PORT = 1200
 HOST = '127.0.0.1'
 
-# Receive address
+# Receive commands address
 ROUTER_PORT2 = 1300
+HOST2 = '127.0.0.1'
+
+# Receive current control address
+ROUTER_PORT3 = 1400
 HOST2 = '127.0.0.1'
 
 # --------------------------------------------------------------------------------------------------------- #
@@ -44,6 +48,30 @@ def receive_commands():
 
 # --------------------------------------------------------------------------------------------------------- #
 
+def receive_waveform():
+
+    # set up listening sockets
+    s_sock = socket(AF_INET, SOCK_DGRAM)
+    address = (HOST2, ROUTER_PORT3)
+    s_sock.bind(address)
+
+    # process data
+    msg, c_add = s_sock.recvfrom(1024)
+    decoded_lsp = msg.decode()
+    command_list = decoded_lsp.split()
+    # print(f"\n+received {command_list}")
+    handle_command(command_list)
+
+# --------------------------------------------------------------------------------------------------------- #
+
+def start_tf_drive():
+    # what we do here is some mapping and that to of the received linearly interpolated data and drive that
+    # through the pmod port to the current control system. just placeholder for now.
+    pass
+
+# --------------------------------------------------------------------------------------------------------- #
+
+
 # this is code for the pynq probably that is sending packets, however can be used here to send
 # information for control actually (may or may not work). Again just copied my own old code
 # will need restructuring to do what we want it to.
@@ -65,7 +93,9 @@ def send_data():
 
 def start_send_thread():
     start_send_data = threading.Thread(target = send_data)
+    start_tf_drive = threading.Thread(target = drive_tf_current)
     start_send_data.start()
+    start_tf_drive.start()
 
 # --------------------------------------------------------------------------------------------------------- #
 
