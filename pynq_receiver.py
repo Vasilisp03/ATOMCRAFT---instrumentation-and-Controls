@@ -22,6 +22,10 @@ HOST2 = '127.0.0.1'
 ROUTER_PORT3 = 1400
 HOST2 = '127.0.0.1'
 
+# CONSTANTS
+TIMESCALE = 3000 # in miliseconds
+NUMBER_OF_POINTS = 100 
+
 # --------------------------------------------------------------------------------------------------------- #
 
 data_received = []
@@ -58,17 +62,38 @@ def receive_waveform():
     # process data
     msg, c_add = s_sock.recvfrom(1024)
     decoded_lsp = msg.decode()
-    command_list = decoded_lsp.split()
-    # print(f"\n+received {command_list}")
-    handle_command(command_list)
+
+    # put the list of current values into data_recived
+    data_received = list(map(float, decoded_lsp))
+
+
+    #idk why you're listening for command i'll just comment for now
+    #command_list = decoded_lsp.split()
+    #print(f"\n+received {command_list}")
+    #handle_command(command_list)
 
 # --------------------------------------------------------------------------------------------------------- #
 
-def start_tf_drive():
+def drive_tf_current():
     # what we do here is some mapping and that to of the received linearly interpolated data and drive that
     # through the pmod port to the current control system. just placeholder for now.
-    pass
+    receive_waveform()
+    
 
+# function that takes current_time (from time zero right so will need to be
+# externally subtract start time) and gives the matching     
+def map_float_to_value(current_time):
+    # no bounds check cause speed please enter right values
+    
+    # Normalize and find the corresponding index
+    index = int(current_time / TIMESCALE * NUMBER_OF_POINTS)
+    
+    # Handle the edge case where 
+    if index == TIMESCALE:
+        index = TIMESCALE - 1
+
+    # Return the value from the list
+    return data_received[index]
 # --------------------------------------------------------------------------------------------------------- #
 
 

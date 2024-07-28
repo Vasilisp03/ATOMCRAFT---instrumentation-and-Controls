@@ -13,6 +13,8 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
 import numpy as np
 from scipy.signal import savgol_filter 
+from scipy.interpolate import interp1d
+import matplotlib.pyplot as plt
 
 # Receive address
 ROUTER_PORT = 1300
@@ -103,7 +105,7 @@ def create_database():
     conn.commit()
     conn.close()
 
-# --------------------------------------------------------------------------------------------------------- #
+# ---------------,------------------------------------------------------------------------------------------ #
 
 def on_submit():
     command = entry.get()
@@ -122,7 +124,29 @@ def on_submit():
 def on_submit_waveform():
     waveform = tf_entry.get()
     # lets do linear interpolation here i think and then send the list of points
-    send_waveform(waveform)
+
+    # separate points with commas with x being the first 4 terms and y the second four 
+    waveform_list = waveform.split(',')
+    waveform_points_array = np.array(waveform_list, dtype=int)
+    x_points = waveform_points_array[:4]
+    y_points = waveform_points_array[4:8]
+    waveformInterpolated = interp1d(x_points, y_points, kind='linear')
+    x_new = np.linspace(0, x_points[3], num=100, endpoint=True)
+
+    interpolated_points = waveformInterpolated(x_new)
+
+    # just plotting the reference current for no reason
+    plt.plot(x_new, interpolated_points, '-', label='Reference Current')
+    plt.xlabel('x')
+    plt.ylabel('y')
+    plt.title('Reference Current')
+    plt.legend()
+    plt.show()
+    
+    itnerpList = interpolated_points.tolist()
+    string_list = list(map(str, itnerpList))
+
+    send_waveform(string_list)
     
     # conn = sqlite3.connect("names.db")
     # c = conn.cursor()
