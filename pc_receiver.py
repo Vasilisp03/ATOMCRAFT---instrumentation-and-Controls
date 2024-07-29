@@ -4,6 +4,7 @@
 
 import contextlib
 from socket import *
+import struct
 import threading
 import time
 from collections import defaultdict
@@ -53,8 +54,10 @@ def receive_from_pynq():
     # process data this is not right just very placeholder
     while running != 0:
         with contextlib.suppress(timeout):
-            msg, c_add = s_sock.recvfrom(1024)
-            decoded_lsp = msg.decode()
+            msg, _ = s_sock.recvfrom(1024)
+            # decoded_lsp = msg.decode()
+            decoded_lsp = struct.unpack('!f', msg)[0]
+
             # print(f"\n+received {decoded_lsp}")
             data_received.append(int(decoded_lsp))
 
@@ -121,41 +124,37 @@ def on_submit():
 
 # --------------------------------------------------------------------------------------------------------- #
 
-def on_submit_waveform():
-    waveform = tf_entry.get()
-    # lets do linear interpolation here i think and then send the list of points
-
-    # separate points with commas with x being the first 4 terms and y the second four 
+def linear_interp(waveform):
     waveform_list = waveform.split(',')
     waveform_points_array = np.array(waveform_list, dtype=int)
     x_points = waveform_points_array[:4]
     y_points = waveform_points_array[4:8]
-    waveformInterpolated = interp1d(x_points, y_points, kind='linear')
+    waveform_interpolated = interp1d(x_points, y_points, kind='linear')
     x_new = np.linspace(0, x_points[3], num=100, endpoint=True)
 
-    interpolated_points = waveformInterpolated(x_new)
-
-    # just plotting the reference current for no reason
-    plt.plot(x_new, interpolated_points, '-', label='Reference Current')
-    plt.xlabel('x')
-    plt.ylabel('y')
-    plt.title('Reference Current')
-    plt.legend()
-    plt.show()
+    interpolated_points = waveform_interpolated(x_new)
     
-    itnerpList = interpolated_points.tolist()
-    string_list = list(map(str, itnerpList))
+    interp_list = interpolated_points.tolist()
+    return list(map(str, interp_list))
 
-    send_waveform(string_list)
+# --------------------------------------------------------------------------------------------------------- #
+
+
+def on_submit_waveform():
+    waveform = tf_entry.get()
+    interpolated = linear_interp(waveform)
+    send_waveform(interpolated)
+
+    # if we really want to we can plot the ref current but its not necessary until after we receive the measured
+    # current back from the pynq
     
-    # conn = sqlite3.connect("names.db")
-    # c = conn.cursor()
+    # plt.plot(x_new, interpolated_points, '-', label='Reference Current')
+    # plt.xlabel('x')
+    # plt.ylabel('y')
+    # plt.title('Reference Current')
+    # plt.legend()
+    # plt.show()
 
-    # c.execute("INSERT INTO names (name) VALUES (?)", (name,))
-    # conn.commit()
-    # conn.close()
-
-    # update_listbox()
 
 # --------------------------------------------------------------------------------------------------------- #
 
@@ -246,7 +245,7 @@ tf_entry.pack()
 # update_listbox()
 
 # simple button to submit whatever
-submit_button = tk.Button(app, text="send packet", command = on_submit)
+submit_button = tk.Button(app, text="send command", command = on_submit)
 submit_button.pack()
 
 tf_submit_button = tk.Button(app, text="send waveform", command = on_submit_waveform)
@@ -272,7 +271,7 @@ selected_value.set("TF coil current")
 
 # --------------------------------------------------------------------------------------------------------- #
 
-create_database()
+# create_database()
 
 # --------------------------------------------------------------------------------------------------------- #
 
