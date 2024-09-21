@@ -17,7 +17,7 @@ from scipy.signal import savgol_filter
 from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
 
-# Receive address
+# Receive TF Coil Current address
 ROUTER_PORT = 1300
 HOST = '127.0.0.1'
 
@@ -29,19 +29,28 @@ HOST2 = '127.0.0.1'
 ROUTER_PORT3 = 1400
 HOST2 = '127.0.0.1'
 
+# Receive Temp address
+ROUTER_PORT4 = 1500
+HOST = '127/0.0.1'
+
 # Other constants
 PLOT_UPDATE_RATE = 9
+TEMP_UPDATE_RATE = 50
 
 # --------------------------------------------------------------------------------------------------------- #
 
-data_received = []
+temperature_data = []
+tf_current_data_received = []
 num_peripherals = 0
 running = 1
+global tf_current_plot
+global temperature_plot
 
 # --------------------------------------------------------------------------------------------------------- #
-
+# Receiving TF Coil Current data from the pynq. It creates the listening socket, then processes
+# the data it receives constantly until the program ends, or it receives no more data
 def receive_from_pynq():
-    global data_received
+    global tf_current_data_received
     global running
 
     # set up listening sockets
@@ -59,7 +68,34 @@ def receive_from_pynq():
             decoded_lsp = struct.unpack('!f', msg)[0]
 
             # print(f"\n+received {decoded_lsp}")
-            data_received.append(int(decoded_lsp))
+            tf_current_data_received.append(int(decoded_lsp))
+
+# --------------------------------------------------------------------------------------------------------- #
+# Similar function to receive_from_pynq, except it will gather the temperature data from the pynq,
+# then process it in the same way. The graphing will happen incrementally, every 0.5 seconds or so to save memory
+
+def receive_temp_from_pynq():
+    global temperature_data_received
+
+    # set up listening sockets
+    s_sock = socket(AF_INET, SOCK_DGRAM)
+    address = (HOST, ROUTER_PORT4)
+    s_sock.bind(address)
+    s_sock.settimeout(1)
+    print(f'Listening on port:{ROUTER_PORT4}')
+
+    # Call plot function with nothing to create empty plot
+    plot(None, None);
+
+    # process data
+    while running != 0:
+        with contextlib.suppress(timeout):
+            msg, _ = s_sock.recvfrom(1024)
+            decoded_lsp = struct.unpack('!f', msg)[0]
+            temperature_data_received.append(int(decoded_lsp))
+            
+            # Graph the data it received
+            update_plot(temperature_plot)
 
 # --------------------------------------------------------------------------------------------------------- #
 
@@ -173,31 +209,77 @@ def on_submit_waveform():
     
 # --------------------------------------------------------------------------------------------------------- #
     
-def update_plot():
-    global plot1
+def update_plot(plot_type):
+    global tf_current_plot
+    global temperature_plot
     global y
-    y = data_received
-    smoothed_y = savgol_filter(y, 7, 2)
-    plot1.clear()
-    plot1.plot(y, label = 'raw signal', color = 'blue')
-    plot1.plot(smoothed_y, label = 'smoothed signal', color = 'red') 
-    plot1.figure.canvas.draw_idle()
+
+    plotted
+    update_interval
+
+    # Initialise the plot so that it fills it with the correct data
+    if (plot_type == tf_current_plot):
+        plotted = tf_current_plot
+        y = tf_current_data_received
+        update_interval = PLOT_UPDATE_RATE
+    elif (plot_type == temperature_plot):
+        plotted = temperature_plot
+        y = temperature_data
+        update_interval = TEMP_UPDATE_RATE
+
+    # if (plot_type == tf_current_data_received):
+    #     y = tf_current_data_received
+    # elif (plot == temperature_data):
+    #     y = temperature_data
     
-    app.after(PLOT_UPDATE_RATE, update_plot)
+    # Fill the plot with the cleaned, updated data
+    smoothed_y = savgol_filter(y, 7, 2)
+    plotted.clear()
+    plotted.plot(y, label = 'raw signal', color = 'blue')
+    plotted.plot(smoothed_y, label = 'smoothed signal', color = 'red') 
+    plotted.figure.canvas.draw_idle()
+
+    if (plot_type == temperature_plot):
+        temperature_plot.figure.canvas.draw_idle()
+        return;
+    
+    app.after(update_interval, update_plot(plot_type))
 
 # --------------------------------------------------------------------------------------------------------- #
 
-def plot():
-    global plot1
-    global y
+def plot(plot_type, data_type):
+    global tf_current_plot
+    global temperature_plot
+    # global y
     fig = Figure(figsize = (8, 5), dpi = 100) 
-    y = data_received
+
+    plotted
+    y
+    update_interval
+
+    if (plot_type == tf_current_plot):
+        plotted = tf_current_plot
+        update_interval = PLOT_UPDATE_RATE
+        y = tf_current_data_received
+    elif (plot_type == temperature_plot):
+        plotted = temperature_plot
+        update_interval = TEMP_UPDATE_RATE
+        if (not temperature_data):
+            return
+        y = temperature_data
+
+
+    # if (plot_type == tf_current_data_received):
+    #     y = tf_current_data_received
+    # elif (plot == temperature_data):
+    #     y = temperature_data
+    
     smoothed_y = savgol_filter(y, 7, 2)
-    plot1 = fig.add_subplot(111) 
-    plot1.plot(y, label = 'raw signal', color = 'blue')
-    plot1.plot(smoothed_y, label = 'smoothed signal', color = 'red') 
-    plot1.set_xlim(0, len(y))
-    plot1.set_ylim(min(y), max(y))
+    plotted = fig.add_subplot(111) 
+    plotted.plot(y, label = 'raw signal', color = 'blue')
+    plotted.plot(smoothed_y, label = 'smoothed signal', color = 'red') 
+    plotted.set_xlim(0, len(y))
+    plotted.set_ylim(min(y), max(y))
     canvas = FigureCanvasTkAgg(fig, master = app)   
     canvas.draw() 
     canvas.get_tk_widget().pack() 
@@ -205,13 +287,15 @@ def plot():
     toolbar.update() 
     canvas.get_tk_widget().pack()
     
-    app.after(PLOT_UPDATE_RATE, update_plot)
+    app.after(update_interval, update_plot(plot_type, data_type))
+
+# --------------------------------------------------------------------------------------------------------- #
 
 # --------------------------------------------------------------------------------------------------------- #
 
 def check_threads():
     global app
-    if not receive_data.is_alive():
+    if not tf_current_data_received.is_alive() and not temperature_data.is_alive():
         app.destroy()
     else:app.after(100, check_threads)
 # --------------------------------------------------------------------------------------------------------- #
@@ -277,10 +361,12 @@ selected_value.set("TF coil current")
 
 if __name__ == "__main__":
     # set up all threads that we want to exist
-    receive_data = threading.Thread(target = receive_from_pynq)
+    tf_current_data_received = threading.Thread(target = receive_from_pynq)
+    temperature_data = threading.Thread(target = receive_temp_from_pynq)
 
     # start threads running
-    receive_data.start()
+    tf_current_data_received.start()
+    temperature_data.start()
     
     # start app window
     app.mainloop()
