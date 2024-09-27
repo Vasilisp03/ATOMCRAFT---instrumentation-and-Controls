@@ -39,7 +39,7 @@ TEMP_UPDATE_RATE = 50
 
 # --------------------------------------------------------------------------------------------------------- #
 
-temperature_data = []
+temperature_data = [0]
 tf_current_data_received = []
 num_peripherals = 0
 running = 1
@@ -85,7 +85,7 @@ def receive_temp_from_pynq():
     print(f'Listening on port:{ROUTER_PORT4}')
 
     # Call plot function with nothing to create empty plot
-    plot(None, None);
+    plot(temperature_plot, temperature_data);
 
     # process data
     while running != 0:
@@ -94,8 +94,6 @@ def receive_temp_from_pynq():
             decoded_lsp = struct.unpack('!f', msg)[0]
             temperature_data_received.append(int(decoded_lsp))
             
-            # Graph the data it received
-            update_plot(temperature_plot)
 
 # --------------------------------------------------------------------------------------------------------- #
 
@@ -239,9 +237,12 @@ def update_plot(plot_type):
     plotted.plot(smoothed_y, label = 'smoothed signal', color = 'red') 
     plotted.figure.canvas.draw_idle()
 
-    if (plot_type == temperature_plot):
-        temperature_plot.figure.canvas.draw_idle()
-        return;
+    # This check is to avoid the interating update_plot() call so it can return to the main receive function
+    # and continue to get data, but I may just be interpreting it wrong
+    # 
+    # if (plot_type == temperature_plot):
+    #     temperature_plot.figure.canvas.draw_idle()
+    #     return;
     
     app.after(update_interval, update_plot(plot_type))
 
@@ -264,8 +265,6 @@ def plot(plot_type, data_type):
     elif (plot_type == temperature_plot):
         plotted = temperature_plot
         update_interval = TEMP_UPDATE_RATE
-        if (not temperature_data):
-            return
         y = temperature_data
 
 
