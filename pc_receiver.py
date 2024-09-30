@@ -39,7 +39,7 @@ TEMP_UPDATE_RATE = 50
 
 # --------------------------------------------------------------------------------------------------------- #
 
-temperature_data = [0]
+temperature_data = []
 tf_current_data_received = []
 num_peripherals = 0
 running = 1
@@ -86,7 +86,7 @@ def receive_temp_from_pynq():
     print(f'Listening on port:{ROUTER_PORT4}')
 
     # Call plot function with nothing to create empty plot
-    plot(temperature_plot, temperature_data)
+    # plot("Temperature")
 
     # process data
     while running != 0:
@@ -213,15 +213,15 @@ def update_plot(plot_type):
     global temperature_plot
     global y
 
-    plotted
-    update_interval
+    plotted = temperature_plot
+    update_interval = 0
 
     # Initialise the plot so that it fills it with the correct data
-    if (plot_type == tf_current_plot):
+    if (plot_type == "Current"):
         plotted = tf_current_plot
         y = tf_current_data_received
         update_interval = PLOT_UPDATE_RATE
-    elif (plot_type == temperature_plot):
+    elif (plot_type == "Temperature"):
         plotted = temperature_plot
         y = temperature_data
         update_interval = TEMP_UPDATE_RATE
@@ -242,21 +242,33 @@ def update_plot(plot_type):
 
 # --------------------------------------------------------------------------------------------------------- #
 
-def plot(plot_type, data_type):
+def on_submit_plot():
+    plot_to_graph = plot_entry.get()
+    plot(plot_to_graph)
+
+def plot(plot_type):
+    if (plot_type == "None"):
+        
+        return
+    
     global tf_current_plot
     global temperature_plot
     # global y
     fig = Figure(figsize = (8, 5), dpi = 100) 
 
-    plotted
-    y
-    update_interval
+    tf_current_plot = fig.add_subplot(111) 
+    temperature_plot = fig.add_subplot(111) 
 
-    if (plot_type == tf_current_plot):
+    plotted = temperature_plot
+    y = []
+        
+    update_interval = 0
+
+    if (plot_type == "Current"):
         plotted = tf_current_plot
         update_interval = PLOT_UPDATE_RATE
         y = tf_current_data_received
-    elif (plot_type == temperature_plot):
+    elif (plot_type == "Temperature"):
         plotted = temperature_plot
         update_interval = TEMP_UPDATE_RATE
         y = temperature_data
@@ -280,7 +292,7 @@ def plot(plot_type, data_type):
     toolbar.update() 
     canvas.get_tk_widget().pack()
     
-    app.after(update_interval, update_plot(plot_type, data_type))
+    app.after(update_interval, update_plot(plot_type))
 
 # --------------------------------------------------------------------------------------------------------- #
 
@@ -314,6 +326,9 @@ entry.pack()
 tf_entry = tk.Entry(app)
 tf_entry.pack()
 
+# plot_entry = tk.Entry(app)
+# plot_entry.pack()
+
 # list of whatever
 # listbox = tk.Listbox(app)
 # listbox.pack()
@@ -327,7 +342,7 @@ tf_submit_button = tk.Button(app, text="send waveform", command = on_submit_wave
 tf_submit_button.pack()
 
 # button for graphs
-plot_button = tk.Button(app, command = plot(tf_current_plot, tf_current_data_received), text = "Plot")
+plot_button = tk.Button(app, command = on_submit_plot, text = "Plot")
 plot_button.pack()
 
 # clear_data_button = tk.Button(app, text="Clear data", command = clear)
