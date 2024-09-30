@@ -76,6 +76,7 @@ def receive_from_pynq():
 
 def receive_temp_from_pynq():
     global temperature_data_received
+    global temperature_plot
 
     # set up listening sockets
     s_sock = socket(AF_INET, SOCK_DGRAM)
@@ -85,7 +86,7 @@ def receive_temp_from_pynq():
     print(f'Listening on port:{ROUTER_PORT4}')
 
     # Call plot function with nothing to create empty plot
-    plot(temperature_plot, temperature_data);
+    plot(temperature_plot, temperature_data)
 
     # process data
     while running != 0:
@@ -236,13 +237,6 @@ def update_plot(plot_type):
     plotted.plot(y, label = 'raw signal', color = 'blue')
     plotted.plot(smoothed_y, label = 'smoothed signal', color = 'red') 
     plotted.figure.canvas.draw_idle()
-
-    # This check is to avoid the interating update_plot() call so it can return to the main receive function
-    # and continue to get data, but I may just be interpreting it wrong
-    # 
-    # if (plot_type == temperature_plot):
-    #     temperature_plot.figure.canvas.draw_idle()
-    #     return;
     
     app.after(update_interval, update_plot(plot_type))
 
