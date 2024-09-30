@@ -31,7 +31,7 @@ HOST2 = '127.0.0.1'
 
 # Receive Temp address
 ROUTER_PORT4 = 1500
-HOST = '127/0.0.1'
+HOST = '127.0.0.1'
 
 # Other constants
 PLOT_UPDATE_RATE = 9
@@ -43,8 +43,8 @@ temperature_data = [0]
 tf_current_data_received = []
 num_peripherals = 0
 running = 1
-global tf_current_plot
-global temperature_plot
+# global tf_current_plot
+# global temperature_plot
 
 # --------------------------------------------------------------------------------------------------------- #
 # Receiving TF Coil Current data from the pynq. It creates the listening socket, then processes
@@ -75,7 +75,7 @@ def receive_from_pynq():
 # then process it in the same way. The graphing will happen incrementally, every 0.5 seconds or so to save memory
 
 def receive_temp_from_pynq():
-    global temperature_data_received
+    global temperature_data
     global temperature_plot
 
     # set up listening sockets
@@ -93,7 +93,7 @@ def receive_temp_from_pynq():
         with contextlib.suppress(timeout):
             msg, _ = s_sock.recvfrom(1024)
             decoded_lsp = struct.unpack('!f', msg)[0]
-            temperature_data_received.append(int(decoded_lsp))
+            temperature_data.append(int(decoded_lsp))
             
 
 # --------------------------------------------------------------------------------------------------------- #
@@ -284,8 +284,6 @@ def plot(plot_type, data_type):
 
 # --------------------------------------------------------------------------------------------------------- #
 
-# --------------------------------------------------------------------------------------------------------- #
-
 def check_threads():
     global app
     if not tf_current_data_received.is_alive() and not temperature_data.is_alive():
@@ -329,7 +327,7 @@ tf_submit_button = tk.Button(app, text="send waveform", command = on_submit_wave
 tf_submit_button.pack()
 
 # button for graphs
-plot_button = tk.Button(app, command = plot, text = "Plot")
+plot_button = tk.Button(app, command = plot(tf_current_plot, tf_current_data_received), text = "Plot")
 plot_button.pack()
 
 # clear_data_button = tk.Button(app, text="Clear data", command = clear)
