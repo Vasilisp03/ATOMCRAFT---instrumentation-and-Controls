@@ -39,8 +39,8 @@ TEMP_UPDATE_RATE = 50
 
 # --------------------------------------------------------------------------------------------------------- #
 
-temperature_data = []
-tf_current_data_received = []
+temperature_data = [0] * 100
+tf_current_data_received = [0] * 100
 num_peripherals = 0
 running = 1
 # global tf_current_plot
@@ -165,7 +165,7 @@ def linear_interp(waveform):
     x_points = waveform_points_array[:4]
     y_points = waveform_points_array[4:8]
     waveform_interpolated = interp1d(x_points, y_points, kind='linear')
-    x_new = np.linspace(0, x_points[3], num=100, endpoint=True)
+    x_new = np.linspace(1, x_points[3], num=100, endpoint=True)
 
     interpolated_points = waveform_interpolated(x_new)
     
