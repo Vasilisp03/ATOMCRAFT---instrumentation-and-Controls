@@ -1,4 +1,4 @@
-#!/Users/vasilispteris/UNIprogs/atomcraft/ATOMCRAFT---instrumentation-and-Controls/venv/bin/python3.12
+#!/Users/vasilispteris/UNIprogs/atomcraft/ATOMCRAFT---instrumentation-and-Controls/venv/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys
