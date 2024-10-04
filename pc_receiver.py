@@ -34,7 +34,8 @@ ROUTER_PORT4 = 1500
 HOST = '127.0.0.1'
 
 # Other constants
-PLOT_UPDATE_RATE = 9
+DEFAULT_UPDATE_RATE = 50
+CURRENT_PLOT_UPDATE_RATE = 9
 TEMP_UPDATE_RATE = 50
 
 # --------------------------------------------------------------------------------------------------------- #
@@ -43,8 +44,9 @@ temperature_data = [0] * 100
 tf_current_data_received = [0] * 100
 num_peripherals = 0
 running = 1
-# global tf_current_plot
-# global temperature_plot
+global tf_current_plot
+global temperature_plot
+update_lock = threading.Lock()
 
 # --------------------------------------------------------------------------------------------------------- #
 # Receiving TF Coil Current data from the pynq. It creates the listening socket, then processes
@@ -211,25 +213,21 @@ def on_submit_waveform():
 def update_plot(plot_type):
     global tf_current_plot
     global temperature_plot
-    global y
-
-    plotted = temperature_plot
-    update_interval = 0
+    
+    # y = tf_current_data_received
+    # plotted = temperature_plot
+    # update_interval = DEFAULT_UPDATE_RATE
 
     # Initialise the plot so that it fills it with the correct data
+    update_lock.acquire()
     if (plot_type == "Current"):
         plotted = tf_current_plot
         y = tf_current_data_received
-        update_interval = PLOT_UPDATE_RATE
+        update_interval = CURRENT_PLOT_UPDATE_RATE
     elif (plot_type == "Temperature"):
         plotted = temperature_plot
         y = temperature_data
         update_interval = TEMP_UPDATE_RATE
-
-    # if (plot_type == tf_current_data_received):
-    #     y = tf_current_data_received
-    # elif (plot == temperature_data):
-    #     y = temperature_data
     
     # Fill the plot with the cleaned, updated data
     smoothed_y = savgol_filter(y, 7, 2)
@@ -238,53 +236,50 @@ def update_plot(plot_type):
     plotted.plot(smoothed_y, label = 'smoothed signal', color = 'red') 
     plotted.figure.canvas.draw_idle()
     
-    app.after(update_interval, update_plot(plot_type))
+    update_lock.release()
+    
+    app.after(update_interval, lambda: update_plot(plot_type))
 
 # --------------------------------------------------------------------------------------------------------- #
 
 def on_submit_plot():
-    plot_to_graph = plot_entry.get()
+    plot_to_graph = selected_dd_plot.get()
     plot(plot_to_graph)
+    
+# --------------------------------------------------------------------------------------------------------- #
 
 def plot(plot_type):
     if (plot_type == "None"):
-        
         return
     
     global tf_current_plot
     global temperature_plot
-    # global y
-    fig = Figure(figsize = (8, 5), dpi = 100) 
 
+    fig = Figure(figsize = (8, 5), dpi = 100) 
     tf_current_plot = fig.add_subplot(111) 
     temperature_plot = fig.add_subplot(111) 
 
-    plotted = temperature_plot
-    y = []
-        
-    update_interval = 0
+    # plotted = temperature_plot
+    # y = [0] * 100
+    # update_interval = DEFAULT_UPDATE_RATE
 
     if (plot_type == "Current"):
         plotted = tf_current_plot
-        update_interval = PLOT_UPDATE_RATE
+        update_interval = CURRENT_PLOT_UPDATE_RATE
         y = tf_current_data_received
     elif (plot_type == "Temperature"):
         plotted = temperature_plot
         update_interval = TEMP_UPDATE_RATE
         y = temperature_data
 
-
-    # if (plot_type == tf_current_data_received):
-    #     y = tf_current_data_received
-    # elif (plot == temperature_data):
-    #     y = temperature_data
     
-    smoothed_y = savgol_filter(y, 7, 2)
+    smoothed_y = savgol_filter(y, 7, 2)    
     plotted = fig.add_subplot(111) 
     plotted.plot(y, label = 'raw signal', color = 'blue')
     plotted.plot(smoothed_y, label = 'smoothed signal', color = 'red') 
     plotted.set_xlim(0, len(y))
-    plotted.set_ylim(min(y), max(y))
+    # placeholder min max values until we can confirm our currents
+    plotted.set_ylim(0, 100)
     canvas = FigureCanvasTkAgg(fig, master = app)   
     canvas.draw() 
     canvas.get_tk_widget().pack() 
@@ -292,13 +287,13 @@ def plot(plot_type):
     toolbar.update() 
     canvas.get_tk_widget().pack()
     
-    app.after(update_interval, update_plot(plot_type))
+    app.after(update_interval, lambda: update_plot(plot_type))
 
 # --------------------------------------------------------------------------------------------------------- #
 
 def check_threads():
     global app
-    if not tf_current_data_received.is_alive() and not temperature_data.is_alive():
+    if not tf_current_data_thread.is_alive() and not temperature_data_thread.is_alive():
         app.destroy()
     else:app.after(100, check_threads)
 # --------------------------------------------------------------------------------------------------------- #
@@ -342,23 +337,28 @@ tf_submit_button = tk.Button(app, text="send waveform", command = on_submit_wave
 tf_submit_button.pack()
 
 # button for graphs
-plot_button = tk.Button(app, command = on_submit_plot, text = "Plot")
-plot_button.pack()
+# plot_button = tk.Button(app, command = on_submit_plot, text = "Plot")
+# plot_button.pack()
 
 # clear_data_button = tk.Button(app, text="Clear data", command = clear)
 # clear_data_button.pack()
 
-exit_button = tk.Button(app, text="Exit (gracefully)", command = exit)
-exit_button.pack()
 
-selected_value = tk.StringVar()
-selected_value.set("TF coil current") 
 
 # trying to implement a dropdown menu thats on pause tho
-# dd_menu = ["TF coil current", "Temperature", "etc..."]
-# dropdown = tk.OptionMenu(app, selected_value, *options, command=on_select)
-# dropdown.pack()
+dd_menu = ["Current", "Temperature"]
 
+selected_dd_plot = tk.StringVar()
+selected_dd_plot.set("Current") 
+
+dropdown = tk.OptionMenu(app, selected_dd_plot, *dd_menu)
+dropdown.pack()
+dd_button = tk.Button(app, text= "Select Plot", command = on_submit_plot)
+dd_button.pack()
+
+
+exit_button = tk.Button(app, text="Exit (gracefully)", command = exit)
+exit_button.pack()
 # --------------------------------------------------------------------------------------------------------- #
 
 # create_database()
@@ -367,12 +367,12 @@ selected_value.set("TF coil current")
 
 if __name__ == "__main__":
     # set up all threads that we want to exist
-    tf_current_data_received = threading.Thread(target = receive_from_pynq)
-    temperature_data = threading.Thread(target = receive_temp_from_pynq)
+    tf_current_data_thread = threading.Thread(target = receive_from_pynq)
+    temperature_data_thread = threading.Thread(target = receive_temp_from_pynq)
 
     # start threads running
-    tf_current_data_received.start()
-    temperature_data.start()
+    tf_current_data_thread.start()
+    temperature_data_thread.start()
     
     # start app window
     app.mainloop()
