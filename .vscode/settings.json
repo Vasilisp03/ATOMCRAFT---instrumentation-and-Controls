@@ -2,7 +2,9 @@
     "cSpell.words": [
         "DGRAM",
         "figsize",
+        "ndarray",
         "pynq",
+        "savgol",
         "tkagg"
     ]
 }

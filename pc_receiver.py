@@ -210,35 +210,39 @@ def on_submit_waveform():
     
 # --------------------------------------------------------------------------------------------------------- #
     
-def update_plot(plot_type):
-    global tf_current_plot
-    global temperature_plot
+def update_plot(plot_type, plotted, y, update_interval):
+    # global tf_current_plot
+    # global temperature_plot
     
     # y = tf_current_data_received
     # plotted = temperature_plot
     # update_interval = DEFAULT_UPDATE_RATE
 
     # Initialise the plot so that it fills it with the correct data
+    # if (plot_type == "Current"):
+    #     plotted = tf_current_plot
+    #     y = tf_current_data_received
+    #     update_interval = CURRENT_PLOT_UPDATE_RATE
+    # elif (plot_type == "Temperature"):
+    #     plotted = temperature_plot
+    #     y = temperature_data
+    #     update_interval = TEMP_UPDATE_RATE
+    
     update_lock.acquire()
-    if (plot_type == "Current"):
-        plotted = tf_current_plot
-        y = tf_current_data_received
-        update_interval = CURRENT_PLOT_UPDATE_RATE
-    elif (plot_type == "Temperature"):
-        plotted = temperature_plot
-        y = temperature_data
-        update_interval = TEMP_UPDATE_RATE
+    try:
+        if isinstance(y, (list, np.ndarray)):
+            # Fill the plot with the cleaned, updated data
+            smoothed_y = savgol_filter(y, 7, 2)
+            plotted.clear()
+            plotted.plot(y, label = 'raw signal', color = 'blue')
+            plotted.plot(smoothed_y, label = 'smoothed signal', color = 'red') 
+            plotted.figure.canvas.draw_idle()
+        else:
+            print("Invalid data type")
+    finally:
+        update_lock.release()
     
-    # Fill the plot with the cleaned, updated data
-    smoothed_y = savgol_filter(y, 7, 2)
-    plotted.clear()
-    plotted.plot(y, label = 'raw signal', color = 'blue')
-    plotted.plot(smoothed_y, label = 'smoothed signal', color = 'red') 
-    plotted.figure.canvas.draw_idle()
-    
-    update_lock.release()
-    
-    app.after(update_interval, lambda: update_plot(plot_type))
+    app.after(update_interval, lambda: update_plot(plot_type, plotted, y, update_interval))
 
 # --------------------------------------------------------------------------------------------------------- #
 
@@ -255,20 +259,21 @@ def plot(plot_type):
     global tf_current_plot
     global temperature_plot
 
-    fig = Figure(figsize = (8, 5), dpi = 100) 
-    tf_current_plot = fig.add_subplot(111) 
-    temperature_plot = fig.add_subplot(111) 
+    fig = Figure(figsize = (5, 2), dpi = 100)
+    plotted = fig.add_subplot(111) 
+    # tf_current_plot = fig.add_subplot(111) 
+    # temperature_plot = fig.add_subplot(111) 
 
     # plotted = temperature_plot
     # y = [0] * 100
     # update_interval = DEFAULT_UPDATE_RATE
 
     if (plot_type == "Current"):
-        plotted = tf_current_plot
+        # plotted = tf_current_plot
         update_interval = CURRENT_PLOT_UPDATE_RATE
         y = tf_current_data_received
     elif (plot_type == "Temperature"):
-        plotted = temperature_plot
+        # plotted = temperature_plot
         update_interval = TEMP_UPDATE_RATE
         y = temperature_data
 
@@ -287,7 +292,7 @@ def plot(plot_type):
     toolbar.update() 
     canvas.get_tk_widget().pack()
     
-    app.after(update_interval, lambda: update_plot(plot_type))
+    app.after(update_interval, lambda: update_plot(plot_type, plotted, y, update_interval))
 
 # --------------------------------------------------------------------------------------------------------- #
 
@@ -309,7 +314,7 @@ def exit():
 # programs title
 app = tk.Tk()
 app.title("AtomCraft Controller")
-app.geometry("1280x720")
+app.geometry("1920x1080")
 
 # just a simple label
 label = tk.Label(app, text="Enter 4 points to outline tf coil current (1st is commands, 2nd is waveform)")
