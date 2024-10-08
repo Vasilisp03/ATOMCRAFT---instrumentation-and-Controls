@@ -1,4 +1,4 @@
-#!/Users/owenpang/Desktop/Uni/AtomCraft/Git/ATOMCRAFT---instrumentation-and-Controls/.venv/bin/python
+#!/Users/owenpang/Desktop/Uni/AtomCraft/Git/ATOMCRAFT---instrumentation-and-Controls/.venv/bin/python3.12
 # -*- coding: utf-8 -*-
 import re
 import sys
