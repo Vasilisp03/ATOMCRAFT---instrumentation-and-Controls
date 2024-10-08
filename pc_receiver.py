@@ -49,6 +49,7 @@ global temperature_plot
 update_lock = threading.Lock()
 
 # --------------------------------------------------------------------------------------------------------- #
+
 # Receiving TF Coil Current data from the pynq. It creates the listening socket, then processes
 # the data it receives constantly until the program ends, or it receives no more data
 def receive_from_pynq():
@@ -73,9 +74,9 @@ def receive_from_pynq():
             tf_current_data_received.append(int(decoded_lsp))
 
 # --------------------------------------------------------------------------------------------------------- #
+
 # Similar function to receive_from_pynq, except it will gather the temperature data from the pynq,
 # then process it in the same way. The graphing will happen incrementally, every 0.5 seconds or so to save memory
-
 def receive_temp_from_pynq():
     global temperature_data
     global temperature_plot
@@ -86,9 +87,6 @@ def receive_temp_from_pynq():
     s_sock.bind(address)
     s_sock.settimeout(1)
     print(f'Listening on port:{ROUTER_PORT4}')
-
-    # Call plot function with nothing to create empty plot
-    # plot("Temperature")
 
     # process data
     while running != 0:
@@ -134,8 +132,6 @@ def clear():
     conn.commit()
     conn.close()
 
-    # update_listbox()
-
 # --------------------------------------------------------------------------------------------------------- #
 
 def create_database():
@@ -151,14 +147,6 @@ def create_database():
 def on_submit():
     command = entry.get()
     send_instructions(command)
-    # conn = sqlite3.connect("names.db")
-    # c = conn.cursor()
-
-    # c.execute("INSERT INTO names (name) VALUES (?)", (name,))
-    # conn.commit()
-    # conn.close()
-
-    # update_listbox()
 
 # --------------------------------------------------------------------------------------------------------- #
 
@@ -192,43 +180,11 @@ def on_submit_waveform():
     # plt.title('Reference Current')
     # plt.legend()
     # plt.show()
-
-
-# --------------------------------------------------------------------------------------------------------- #
-
-# def update_listbox():
-#     conn = sqlite3.connect("names.db")
-#     c = conn.cursor()
-
-#     c.execute("SELECT * FROM names")
-#     rows = c.fetchall()
-
-#     listbox.delete(0, tk.END)
-#     for row in rows:
-#         listbox.insert(tk.END, row[1])
-
-#     conn.close()
     
 # --------------------------------------------------------------------------------------------------------- #
     
+# hopefully this function is cohesive enough that it works for plot alpha and beta
 def update_plot(plot_type, plotted, y, update_interval):
-    # global tf_current_plot
-    # global temperature_plot
-    
-    # y = tf_current_data_received
-    # plotted = temperature_plot
-    # update_interval = DEFAULT_UPDATE_RATE
-
-    # Initialise the plot so that it fills it with the correct data
-    # if (plot_type == "Current"):
-    #     plotted = tf_current_plot
-    #     y = tf_current_data_received
-    #     update_interval = CURRENT_PLOT_UPDATE_RATE
-    # elif (plot_type == "Temperature"):
-    #     plotted = temperature_plot
-    #     y = temperature_data
-    #     update_interval = TEMP_UPDATE_RATE
-    
     update_lock.acquire()
     try:
         if isinstance(y, (list, np.ndarray)):
@@ -247,12 +203,20 @@ def update_plot(plot_type, plotted, y, update_interval):
 
 # --------------------------------------------------------------------------------------------------------- #
 
+# hopefully we can forego this button and have the plots change solely on the dd menu
 def on_submit_plot():
-    plot_to_graph = selected_dd_plot.get()
+    plot_to_graph = alpha_plot.get()
     plot(plot_to_graph)
     
 # --------------------------------------------------------------------------------------------------------- #
 
+def plot_beta():
+    # basically the same as plot_alpha but with different variables
+    pass
+
+# --------------------------------------------------------------------------------------------------------- #
+
+# rename to plot_alpha. need to extend functionality to be interchangeable graphs with different data
 def plot(plot_type):
     if (plot_type == "None"):
         return
@@ -262,19 +226,11 @@ def plot(plot_type):
 
     fig = Figure(figsize = (5, 2), dpi = 100)
     plotted = fig.add_subplot(111) 
-    # tf_current_plot = fig.add_subplot(111) 
-    # temperature_plot = fig.add_subplot(111) 
-
-    # plotted = temperature_plot
-    # y = [0] * 100
-    # update_interval = DEFAULT_UPDATE_RATE
 
     if (plot_type == "Current"):
-        # plotted = tf_current_plot
         update_interval = CURRENT_PLOT_UPDATE_RATE
         y = tf_current_data_received
     elif (plot_type == "Temperature"):
-        # plotted = temperature_plot
         update_interval = TEMP_UPDATE_RATE
         y = temperature_data
 
@@ -327,14 +283,6 @@ entry.pack()
 tf_entry = tk.Entry(app)
 tf_entry.pack()
 
-# plot_entry = tk.Entry(app)
-# plot_entry.pack()
-
-# list of whatever
-# listbox = tk.Listbox(app)
-# listbox.pack()
-# update_listbox()
-
 # simple button to submit whatever
 submit_button = tk.Button(app, text="send command", command = on_submit)
 submit_button.pack()
@@ -342,31 +290,36 @@ submit_button.pack()
 tf_submit_button = tk.Button(app, text="send waveform", command = on_submit_waveform)
 tf_submit_button.pack()
 
-# button for graphs
-# plot_button = tk.Button(app, command = on_submit_plot, text = "Plot")
-# plot_button.pack()
+# --------------------------------------------------------------------------------------------------------- #
 
-# clear_data_button = tk.Button(app, text="Clear data", command = clear)
-# clear_data_button.pack()
+alpha_dd_menu = ["Current", "Temperature"]
 
+# dd for plot_alpha
+alpha_plot = tk.StringVar()
+alpha_plot.set("Select Variable To Plot") 
 
+alpha_dropdown = tk.OptionMenu(app, alpha_plot, *alpha_dd_menu)
+alpha_dropdown.pack()
+alpha_dd_button = tk.Button(app, text= "Select Plot", command = on_submit_plot)
+alpha_dd_button.pack()
 
-dd_menu = ["Current", "Temperature"]
+# --------------------------------------------------------------------------------------------------------- #
 
-selected_dd_plot = tk.StringVar()
-selected_dd_plot.set("Select Variable To Plot") 
+# beta_dd_menu = ["Current", "Temperature"]
 
-dropdown = tk.OptionMenu(app, selected_dd_plot, *dd_menu)
-dropdown.pack()
-dd_button = tk.Button(app, text= "Select Plot", command = on_submit_plot)
-dd_button.pack()
+# dd for plot_beta
+# beta_plot = tk.StringVar()
+# beta_plot.set("Select Variable To Plot") 
 
+# beta_dropdown = tk.OptionMenu(app, beta_plot, *beta_dd_menu)
+# beta_dropdown.pack()
+# beta_dd_button = tk.Button(app, text= "Select Plot", command = on_submit_plot)
+# beta_dd_button.pack()
+
+# --------------------------------------------------------------------------------------------------------- #
 
 exit_button = tk.Button(app, text="Exit (gracefully)", command = exit)
 exit_button.pack()
-# --------------------------------------------------------------------------------------------------------- #
-
-# create_database()
 
 # --------------------------------------------------------------------------------------------------------- #
 
