@@ -94,7 +94,8 @@ def receive_temp_from_pynq():
     while running != 0:
         with contextlib.suppress(timeout):
             msg, _ = s_sock.recvfrom(1024)
-            decoded_lsp = struct.unpack('!f', msg)[0]
+            decoded_lsp = msg.decode()
+            # decoded_lsp = struct.unpack('!f', msg)[0]
             temperature_data.append(int(decoded_lsp))
             
 
@@ -354,7 +355,7 @@ tf_submit_button.pack()
 dd_menu = ["Current", "Temperature"]
 
 selected_dd_plot = tk.StringVar()
-selected_dd_plot.set("Current") 
+selected_dd_plot.set("Select Variable To Plot") 
 
 dropdown = tk.OptionMenu(app, selected_dd_plot, *dd_menu)
 dropdown.pack()
