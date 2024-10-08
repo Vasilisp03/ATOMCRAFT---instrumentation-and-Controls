@@ -8,13 +8,13 @@ Link: https://unsw.sharepoint.com/sites/AtomCraft713/_layouts/15/Doc.aspx?source
 Typing 'git' gives a list of commands (for anyone unfamiliar)
 
 # Dependencies
-If using mac then all dependencies can be installed using brew
+If using mac then all dependencies can be installed using brew ALSO USE PIP
 
 ```console
 brew bundle install
 ```
 
-if using windows or linux all dependencies can be installed using pip. 
+Since we are using python all dependencies can be installed using pip. 
 
 ```console
 pip install -r requirements.txt
