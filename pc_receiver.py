@@ -351,7 +351,6 @@ tf_submit_button.pack()
 
 
 
-# trying to implement a dropdown menu thats on pause tho
 dd_menu = ["Current", "Temperature"]
 
 selected_dd_plot = tk.StringVar()
