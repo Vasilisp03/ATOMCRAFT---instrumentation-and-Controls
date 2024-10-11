@@ -19,11 +19,15 @@ HOST = '127.0.0.1'
 
 # Receive commands address
 ROUTER_PORT2 = 1300
-HOST2 = '127.0.0.1'
 
 # Receive current control address
 ROUTER_PORT3 = 1400
-HOST2 = '127.0.0.1'
+
+# Send temperature address
+ROUTER_PORT_TEMPERATURE = 1500
+
+# Send pressure address
+ROUTER_PORT_PRESSURE = 1600
 
 # CONSTANTS
 TIMESCALE = 3000 # in miliseconds
@@ -44,7 +48,7 @@ def receive_commands():
 
     # set up listening sockets
     s_sock = socket(AF_INET, SOCK_DGRAM)
-    address = (HOST2, ROUTER_PORT2)
+    address = (HOST, ROUTER_PORT2)
     s_sock.bind(address)
     print(f'Listening on port:{ROUTER_PORT2}')
 
@@ -63,7 +67,7 @@ def receive_waveform():
     
     # set up listening sockets
     s_sock = socket(AF_INET, SOCK_DGRAM)
-    address = (HOST2, ROUTER_PORT3)
+    address = (HOST, ROUTER_PORT3)
     s_sock.bind(address)
 
     # process data
@@ -160,6 +164,42 @@ def send_data():
 
 # --------------------------------------------------------------------------------------------------------- #
 
+def send_temperatures_test():
+    # THIS FUNCTION IS A TEST FUNCTION TO SEND TEMPERATURES TO THE PC
+    # TO BE REMOVED AT A LATER DATE
+    while True:
+        c_sock = socket(AF_INET, SOCK_DGRAM)
+        send_address = (HOST, ROUTER_PORT_TEMPERATURE)
+        data_sent = str(random.randint(50, 100))
+        packet = data_sent.encode()
+        c_sock.sendto(packet, send_address)
+        time.sleep(0.5)
+        
+def placeholder_temperature_starter():
+    # send_test_temperatures = threading.Thread(target = send_temperatures_test)
+    send_test_temperatures.start()
+    
+# --------------------------------------------------------------------------------------------------------- #
+
+    
+def send_pressure_test():
+    # THIS FUNCTION IS A TEST FUNCTION TO SEND PRESSURES TO THE PC
+    # TO BE REMOVED AT A LATER DATE
+    while True:
+        c_sock = socket(AF_INET, SOCK_DGRAM)
+        send_address = (HOST, ROUTER_PORT_PRESSURE)
+        # data_sent = str(random.randint(50, 100))
+        data_sent = "{:.2f}".format(random.uniform(50, 100))
+        packet = data_sent.encode()
+        c_sock.sendto(packet, send_address)
+        time.sleep(0.5)
+        
+def placeholder_pressure_starter():
+    # send_test_pressure = threading.Thread(target = send_pressure_test)
+    send_test_pressure.start()
+
+# --------------------------------------------------------------------------------------------------------- #
+
 def start_send_thread():
     start_send_data = threading.Thread(target = send_data)
     # start_tf_drive = threading.Thread(target = drive_tf_current)
@@ -170,6 +210,8 @@ def start_send_thread():
 
 commands = {
     "start control loop": start_send_thread,
+    "temperature test": placeholder_temperature_starter,
+    "pressure test": placeholder_pressure_starter
 }
 
 def handle_command(command):
@@ -187,6 +229,8 @@ if __name__ == "__main__":
     receive_command = threading.Thread(target = receive_commands)
     receive_wave = threading.Thread(target = receive_waveform)
     start_send_data = threading.Thread(target = send_data)
+    send_test_temperatures = threading.Thread(target = send_temperatures_test)
+    send_test_pressure = threading.Thread(target = send_pressure_test)
 
     # start threads running
     try:

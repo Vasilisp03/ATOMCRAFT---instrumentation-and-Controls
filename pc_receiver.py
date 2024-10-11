@@ -17,7 +17,7 @@ from scipy.signal import savgol_filter
 from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
 
-# Receive address
+# Receive TF Coil Current address
 ROUTER_PORT = 1300
 HOST = '127.0.0.1'
 
@@ -29,19 +29,35 @@ HOST2 = '127.0.0.1'
 ROUTER_PORT3 = 1400
 HOST2 = '127.0.0.1'
 
+# Receive Temp address
+ROUTER_PORT4 = 1500
+HOST = '127.0.0.1'
+
+# Receive Temp address
+ROUTER_PORT5 = 1600
+HOST = '127.0.0.1'
+
 # Other constants
-PLOT_UPDATE_RATE = 9
+DEFAULT_UPDATE_RATE = 100
 
 # --------------------------------------------------------------------------------------------------------- #
 
-data_received = [0] * 100
+temperature_data = [25] * 100
+tf_current_data_received = [10] * 100
+y_alpha = [0] * 100
+y_beta = [0] * 100
 num_peripherals = 0
 running = 1
+global tf_current_plot
+global temperature_plot
+update_lock = threading.Lock()
 
 # --------------------------------------------------------------------------------------------------------- #
 
+# Receiving TF Coil Current data from the pynq. It creates the listening socket, then processes
+# the data it receives constantly until the program ends, or it receives no more data
 def receive_from_pynq():
-    global data_received
+    global tf_current_data_received
     global running
 
     # set up listening sockets
@@ -59,7 +75,31 @@ def receive_from_pynq():
             decoded_lsp = struct.unpack('!f', msg)[0]
 
             # print(f"\n+received {decoded_lsp}")
-            data_received.append(int(decoded_lsp))
+            tf_current_data_received.append(int(decoded_lsp))
+
+# --------------------------------------------------------------------------------------------------------- #
+
+# Similar function to receive_from_pynq, except it will gather the temperature data from the pynq,
+# then process it in the same way. The graphing will happen incrementally, every 0.5 seconds or so to save memory
+def receive_temp_from_pynq():
+    global temperature_data
+    global temperature_plot
+
+    # set up listening sockets
+    s_sock = socket(AF_INET, SOCK_DGRAM)
+    address = (HOST, ROUTER_PORT4)
+    s_sock.bind(address)
+    s_sock.settimeout(1)
+    print(f'Listening on port:{ROUTER_PORT4}')
+
+    # process data
+    while running != 0:
+        with contextlib.suppress(timeout):
+            msg, _ = s_sock.recvfrom(1024)
+            decoded_lsp = msg.decode()
+            # decoded_lsp = struct.unpack('!f', msg)[0]
+            temperature_data.append(int(decoded_lsp))
+            
 
 # --------------------------------------------------------------------------------------------------------- #
 
@@ -96,8 +136,6 @@ def clear():
     conn.commit()
     conn.close()
 
-    # update_listbox()
-
 # --------------------------------------------------------------------------------------------------------- #
 
 def create_database():
@@ -113,14 +151,6 @@ def create_database():
 def on_submit():
     command = entry.get()
     send_instructions(command)
-    # conn = sqlite3.connect("names.db")
-    # c = conn.cursor()
-
-    # c.execute("INSERT INTO names (name) VALUES (?)", (name,))
-    # conn.commit()
-    # conn.close()
-
-    # update_listbox()
 
 # --------------------------------------------------------------------------------------------------------- #
 
@@ -154,50 +184,49 @@ def on_submit_waveform():
     # plt.title('Reference Current')
     # plt.legend()
     # plt.show()
-
-
-# --------------------------------------------------------------------------------------------------------- #
-
-# def update_listbox():
-#     conn = sqlite3.connect("names.db")
-#     c = conn.cursor()
-
-#     c.execute("SELECT * FROM names")
-#     rows = c.fetchall()
-
-#     listbox.delete(0, tk.END)
-#     for row in rows:
-#         listbox.insert(tk.END, row[1])
-
-#     conn.close()
     
 # --------------------------------------------------------------------------------------------------------- #
     
-def update_plot():
-    global plot1
-    global y
-    y = data_received
-    smoothed_y = savgol_filter(y, 7, 2)
-    plot1.clear()
-    plot1.plot(y, label = 'raw signal', color = 'blue')
-    plot1.plot(smoothed_y, label = 'smoothed signal', color = 'red') 
-    plot1.figure.canvas.draw_idle()
+# hopefully this function is cohesive enough that it works for plot alpha and beta
+def update_plot(plotted, parent_plot):
+    update_lock.acquire()
+    try:
+        if isinstance(y_alpha, (list, np.ndarray)) and parent_plot == "alpha":
+            # Fill the plot with the cleaned, updated data
+            smoothed_y = savgol_filter(y_alpha, 7, 2)
+            plotted.clear()
+            plotted.plot(y_alpha, label = 'raw signal', color = 'blue')
+            plotted.plot(smoothed_y, label = 'smoothed signal', color = 'red') 
+            plotted.figure.canvas.draw_idle()
+        elif isinstance(y_beta, (list, np.ndarray)) and parent_plot == "beta":
+            # Fill the plot with the cleaned, updated data
+            smoothed_y = savgol_filter(y_beta, 7, 2)
+            plotted.clear()
+            plotted.plot(y_beta, label = 'raw signal', color = 'blue')
+            plotted.plot(smoothed_y, label = 'smoothed signal', color = 'red') 
+            plotted.figure.canvas.draw_idle()
+            
+        else:
+            print("Invalid data type")
+    finally:
+        update_lock.release()
     
-    app.after(PLOT_UPDATE_RATE, update_plot)
+    app.after(DEFAULT_UPDATE_RATE, lambda: update_plot(plotted, parent_plot))
 
 # --------------------------------------------------------------------------------------------------------- #
 
-def plot():
-    global plot1
-    global y
-    fig = Figure(figsize = (8, 5), dpi = 100) 
-    y = data_received
-    smoothed_y = savgol_filter(y, 7, 2)
-    plot1 = fig.add_subplot(111) 
-    plot1.plot(y, label = 'raw signal', color = 'blue')
-    plot1.plot(smoothed_y, label = 'smoothed signal', color = 'red') 
-    plot1.set_xlim(0, len(y))
-    plot1.set_ylim(min(y), max(y))
+# rename to plot_alpha. need to extend functionality to be interchangeable graphs with different data
+def plot_alpha():    
+    fig = Figure(figsize = (5, 2), dpi = 100)
+    plotted = fig.add_subplot(111) 
+    
+    smoothed_y = savgol_filter(y_alpha, 7, 2)    
+    plotted = fig.add_subplot(111) 
+    plotted.plot(y_alpha, label = 'raw signal', color = 'blue')
+    plotted.plot(smoothed_y, label = 'smoothed signal', color = 'red') 
+    plotted.set_xlim(0, len(y_alpha))
+    # placeholder min max values until we can confirm our currents
+    plotted.set_ylim(0, 100)
     canvas = FigureCanvasTkAgg(fig, master = app)   
     canvas.draw() 
     canvas.get_tk_widget().pack() 
@@ -205,15 +234,71 @@ def plot():
     toolbar.update() 
     canvas.get_tk_widget().pack()
     
-    app.after(PLOT_UPDATE_RATE, update_plot)
+    app.after(DEFAULT_UPDATE_RATE, lambda: update_plot(plotted, "alpha"))
+    
+def plot_beta():    
+    fig = Figure(figsize = (5, 2), dpi = 100)
+    plotted = fig.add_subplot(111) 
+    
+    smoothed_y = savgol_filter(y_beta, 7, 2)    
+    plotted = fig.add_subplot(111) 
+    plotted.plot(y_beta, label = 'raw signal', color = 'blue')
+    plotted.plot(smoothed_y, label = 'smoothed signal', color = 'red') 
+    plotted.set_xlim(0, len(y_alpha))
+    # placeholder min max values until we can confirm our currents
+    plotted.set_ylim(0, 100)
+    canvas = FigureCanvasTkAgg(fig, master = app)   
+    canvas.draw() 
+    canvas.get_tk_widget().pack() 
+    toolbar = NavigationToolbar2Tk(canvas, app) 
+    toolbar.update() 
+    canvas.get_tk_widget().pack()
+    
+    app.after(DEFAULT_UPDATE_RATE, lambda: update_plot(plotted, "beta"))
+
+# --------------------------------------------------------------------------------------------------------- #
+
+def switch_plot_alpha():
+    global y_alpha
+    data_to_plot = alpha_plot_data.get()
+    if (data_to_plot == "Current"):
+        y_alpha = tf_current_data_received
+    elif (data_to_plot == "Temperature"):
+        y_alpha = temperature_data
+    
+def switch_plot_beta():
+    global y_beta
+    data_to_plot = beta_plot_data.get()
+    if (data_to_plot == "Current"):
+        y_beta = tf_current_data_received
+    elif (data_to_plot == "Temperature"):
+        y_beta = temperature_data
+
+# --------------------------------------------------------------------------------------------------------- #
+
+def receive_pressure():
+    # set up listening sockets
+    s_sock = socket(AF_INET, SOCK_DGRAM)
+    address = (HOST, ROUTER_PORT5)
+    s_sock.bind(address)
+    s_sock.settimeout(1)
+    print(f'Listening on port:{ROUTER_PORT5}')
+
+    # process data
+    while running != 0:
+        with contextlib.suppress(timeout):
+            msg, _ = s_sock.recvfrom(1024)
+            decoded_lsp = msg.decode()
+            number_label.config(text=decoded_lsp)
 
 # --------------------------------------------------------------------------------------------------------- #
 
 def check_threads():
     global app
-    if not receive_data.is_alive():
+    if not tf_current_data_thread.is_alive() and not temperature_data_thread.is_alive():
         app.destroy()
     else:app.after(100, check_threads)
+    
 # --------------------------------------------------------------------------------------------------------- #
 
 def exit():
@@ -227,7 +312,7 @@ def exit():
 # programs title
 app = tk.Tk()
 app.title("AtomCraft Controller")
-app.geometry("1280x720")
+app.geometry("1920x1080")
 
 # just a simple label
 label = tk.Label(app, text="Enter 4 points to outline tf coil current (1st is commands, 2nd is waveform)")
@@ -239,11 +324,6 @@ entry.pack()
 tf_entry = tk.Entry(app)
 tf_entry.pack()
 
-# list of whatever
-# listbox = tk.Listbox(app)
-# listbox.pack()
-# update_listbox()
-
 # simple button to submit whatever
 submit_button = tk.Button(app, text="send command", command = on_submit)
 submit_button.pack()
@@ -251,36 +331,59 @@ submit_button.pack()
 tf_submit_button = tk.Button(app, text="send waveform", command = on_submit_waveform)
 tf_submit_button.pack()
 
-# button for graphs
-plot_button = tk.Button(app, command = plot, text = "Plot")
-plot_button.pack()
-
-# clear_data_button = tk.Button(app, text="Clear data", command = clear)
-# clear_data_button.pack()
-
-exit_button = tk.Button(app, text="Exit (gracefully)", command = exit)
-exit_button.pack()
-
-selected_value = tk.StringVar()
-selected_value.set("TF coil current") 
-
-# trying to implement a dropdown menu thats on pause tho
-# dd_menu = ["TF coil current", "Temperature", "etc..."]
-# dropdown = tk.OptionMenu(app, selected_value, *options, command=on_select)
-# dropdown.pack()
+number_label = tk.Label(app, text="0.00", font=("Helvetica", 48))
+number_label.pack(pady=20)
 
 # --------------------------------------------------------------------------------------------------------- #
 
-# create_database()
+alpha_dd_menu = ["Current", "Temperature"]
+
+# dd for plot_alpha
+alpha_plot_data = tk.StringVar()
+alpha_plot_data.set("Select Variable To Plot") 
+alpha_plot_data.trace_add("write", lambda *args: switch_plot_alpha())
+
+alpha_dropdown = tk.OptionMenu(app, alpha_plot_data, *alpha_dd_menu)
+alpha_dropdown.pack()
+# alpha_dd_button = tk.Button(app, text= "Select Plot", command = on_submit_plot)
+# alpha_dd_button.pack()
+
+plot_alpha()
+
+# --------------------------------------------------------------------------------------------------------- #
+
+beta_dd_menu = ["Current", "Temperature"]
+
+# dd for plot_alpha
+beta_plot_data = tk.StringVar()
+beta_plot_data.set("Select Variable To Plot") 
+beta_plot_data.trace_add("write", lambda *args: switch_plot_beta())
+
+beta_dropdown = tk.OptionMenu(app, beta_plot_data, *beta_dd_menu)
+beta_dropdown.pack()
+# alpha_dd_button = tk.Button(app, text= "Select Plot", command = on_submit_plot)
+# alpha_dd_button.pack()
+
+plot_beta()
+
+# --------------------------------------------------------------------------------------------------------- #
+
+exit_button = tk.Button(app, text="Exit (gracefully)", command = exit)
+exit_button.pack()
 
 # --------------------------------------------------------------------------------------------------------- #
 
 if __name__ == "__main__":
     # set up all threads that we want to exist
-    receive_data = threading.Thread(target = receive_from_pynq)
+    tf_current_data_thread = threading.Thread(target = receive_from_pynq)
+    temperature_data_thread = threading.Thread(target = receive_temp_from_pynq)
+    pressure_data_thread = threading.Thread(target = receive_pressure)
+
 
     # start threads running
-    receive_data.start()
+    tf_current_data_thread.start()
+    temperature_data_thread.start()
+    pressure_data_thread.start()
     
     # start app window
     app.mainloop()
