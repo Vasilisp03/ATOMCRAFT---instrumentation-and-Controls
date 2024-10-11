@@ -33,15 +33,19 @@ HOST2 = '127.0.0.1'
 ROUTER_PORT4 = 1500
 HOST = '127.0.0.1'
 
+# Receive Temp address
+ROUTER_PORT5 = 1600
+HOST = '127.0.0.1'
+
 # Other constants
-DEFAULT_UPDATE_RATE = 50
-CURRENT_PLOT_UPDATE_RATE = 9
-TEMP_UPDATE_RATE = 50
+DEFAULT_UPDATE_RATE = 100
 
 # --------------------------------------------------------------------------------------------------------- #
 
-temperature_data = [0] * 100
-tf_current_data_received = [0] * 100
+temperature_data = [25] * 100
+tf_current_data_received = [10] * 100
+y_alpha = [0] * 100
+y_beta = [0] * 100
 num_peripherals = 0
 running = 1
 global tf_current_plot
@@ -184,62 +188,43 @@ def on_submit_waveform():
 # --------------------------------------------------------------------------------------------------------- #
     
 # hopefully this function is cohesive enough that it works for plot alpha and beta
-def update_plot(plot_type, plotted, y, update_interval):
+def update_plot(plotted, parent_plot):
     update_lock.acquire()
     try:
-        if isinstance(y, (list, np.ndarray)):
+        if isinstance(y_alpha, (list, np.ndarray)) and parent_plot == "alpha":
             # Fill the plot with the cleaned, updated data
-            smoothed_y = savgol_filter(y, 7, 2)
+            smoothed_y = savgol_filter(y_alpha, 7, 2)
             plotted.clear()
-            plotted.plot(y, label = 'raw signal', color = 'blue')
+            plotted.plot(y_alpha, label = 'raw signal', color = 'blue')
             plotted.plot(smoothed_y, label = 'smoothed signal', color = 'red') 
             plotted.figure.canvas.draw_idle()
+        elif isinstance(y_beta, (list, np.ndarray)) and parent_plot == "beta":
+            # Fill the plot with the cleaned, updated data
+            smoothed_y = savgol_filter(y_beta, 7, 2)
+            plotted.clear()
+            plotted.plot(y_beta, label = 'raw signal', color = 'blue')
+            plotted.plot(smoothed_y, label = 'smoothed signal', color = 'red') 
+            plotted.figure.canvas.draw_idle()
+            
         else:
             print("Invalid data type")
     finally:
         update_lock.release()
     
-    app.after(update_interval, lambda: update_plot(plot_type, plotted, y, update_interval))
-
-# --------------------------------------------------------------------------------------------------------- #
-
-# hopefully we can forego this button and have the plots change solely on the dd menu
-def on_submit_plot():
-    plot_to_graph = alpha_plot.get()
-    plot(plot_to_graph)
-    
-# --------------------------------------------------------------------------------------------------------- #
-
-def plot_beta():
-    # basically the same as plot_alpha but with different variables
-    pass
+    app.after(DEFAULT_UPDATE_RATE, lambda: update_plot(plotted, parent_plot))
 
 # --------------------------------------------------------------------------------------------------------- #
 
 # rename to plot_alpha. need to extend functionality to be interchangeable graphs with different data
-def plot(plot_type):
-    if (plot_type == "None"):
-        return
-    
-    global tf_current_plot
-    global temperature_plot
-
+def plot_alpha():    
     fig = Figure(figsize = (5, 2), dpi = 100)
     plotted = fig.add_subplot(111) 
-
-    if (plot_type == "Current"):
-        update_interval = CURRENT_PLOT_UPDATE_RATE
-        y = tf_current_data_received
-    elif (plot_type == "Temperature"):
-        update_interval = TEMP_UPDATE_RATE
-        y = temperature_data
-
     
-    smoothed_y = savgol_filter(y, 7, 2)    
+    smoothed_y = savgol_filter(y_alpha, 7, 2)    
     plotted = fig.add_subplot(111) 
-    plotted.plot(y, label = 'raw signal', color = 'blue')
+    plotted.plot(y_alpha, label = 'raw signal', color = 'blue')
     plotted.plot(smoothed_y, label = 'smoothed signal', color = 'red') 
-    plotted.set_xlim(0, len(y))
+    plotted.set_xlim(0, len(y_alpha))
     # placeholder min max values until we can confirm our currents
     plotted.set_ylim(0, 100)
     canvas = FigureCanvasTkAgg(fig, master = app)   
@@ -249,7 +234,62 @@ def plot(plot_type):
     toolbar.update() 
     canvas.get_tk_widget().pack()
     
-    app.after(update_interval, lambda: update_plot(plot_type, plotted, y, update_interval))
+    app.after(DEFAULT_UPDATE_RATE, lambda: update_plot(plotted, "alpha"))
+    
+def plot_beta():    
+    fig = Figure(figsize = (5, 2), dpi = 100)
+    plotted = fig.add_subplot(111) 
+    
+    smoothed_y = savgol_filter(y_beta, 7, 2)    
+    plotted = fig.add_subplot(111) 
+    plotted.plot(y_beta, label = 'raw signal', color = 'blue')
+    plotted.plot(smoothed_y, label = 'smoothed signal', color = 'red') 
+    plotted.set_xlim(0, len(y_alpha))
+    # placeholder min max values until we can confirm our currents
+    plotted.set_ylim(0, 100)
+    canvas = FigureCanvasTkAgg(fig, master = app)   
+    canvas.draw() 
+    canvas.get_tk_widget().pack() 
+    toolbar = NavigationToolbar2Tk(canvas, app) 
+    toolbar.update() 
+    canvas.get_tk_widget().pack()
+    
+    app.after(DEFAULT_UPDATE_RATE, lambda: update_plot(plotted, "beta"))
+
+# --------------------------------------------------------------------------------------------------------- #
+
+def switch_plot_alpha():
+    global y_alpha
+    data_to_plot = alpha_plot_data.get()
+    if (data_to_plot == "Current"):
+        y_alpha = tf_current_data_received
+    elif (data_to_plot == "Temperature"):
+        y_alpha = temperature_data
+    
+def switch_plot_beta():
+    global y_beta
+    data_to_plot = beta_plot_data.get()
+    if (data_to_plot == "Current"):
+        y_beta = tf_current_data_received
+    elif (data_to_plot == "Temperature"):
+        y_beta = temperature_data
+
+# --------------------------------------------------------------------------------------------------------- #
+
+def receive_pressure():
+    # set up listening sockets
+    s_sock = socket(AF_INET, SOCK_DGRAM)
+    address = (HOST, ROUTER_PORT5)
+    s_sock.bind(address)
+    s_sock.settimeout(1)
+    print(f'Listening on port:{ROUTER_PORT5}')
+
+    # process data
+    while running != 0:
+        with contextlib.suppress(timeout):
+            msg, _ = s_sock.recvfrom(1024)
+            decoded_lsp = msg.decode()
+            number_label.config(text=decoded_lsp)
 
 # --------------------------------------------------------------------------------------------------------- #
 
@@ -258,6 +298,7 @@ def check_threads():
     if not tf_current_data_thread.is_alive() and not temperature_data_thread.is_alive():
         app.destroy()
     else:app.after(100, check_threads)
+    
 # --------------------------------------------------------------------------------------------------------- #
 
 def exit():
@@ -290,31 +331,40 @@ submit_button.pack()
 tf_submit_button = tk.Button(app, text="send waveform", command = on_submit_waveform)
 tf_submit_button.pack()
 
+number_label = tk.Label(app, text="0.00", font=("Helvetica", 48))
+number_label.pack(pady=20)
+
 # --------------------------------------------------------------------------------------------------------- #
 
 alpha_dd_menu = ["Current", "Temperature"]
 
 # dd for plot_alpha
-alpha_plot = tk.StringVar()
-alpha_plot.set("Select Variable To Plot") 
+alpha_plot_data = tk.StringVar()
+alpha_plot_data.set("Select Variable To Plot") 
+alpha_plot_data.trace_add("write", lambda *args: switch_plot_alpha())
 
-alpha_dropdown = tk.OptionMenu(app, alpha_plot, *alpha_dd_menu)
+alpha_dropdown = tk.OptionMenu(app, alpha_plot_data, *alpha_dd_menu)
 alpha_dropdown.pack()
-alpha_dd_button = tk.Button(app, text= "Select Plot", command = on_submit_plot)
-alpha_dd_button.pack()
+# alpha_dd_button = tk.Button(app, text= "Select Plot", command = on_submit_plot)
+# alpha_dd_button.pack()
+
+plot_alpha()
 
 # --------------------------------------------------------------------------------------------------------- #
 
-# beta_dd_menu = ["Current", "Temperature"]
+beta_dd_menu = ["Current", "Temperature"]
 
-# dd for plot_beta
-# beta_plot = tk.StringVar()
-# beta_plot.set("Select Variable To Plot") 
+# dd for plot_alpha
+beta_plot_data = tk.StringVar()
+beta_plot_data.set("Select Variable To Plot") 
+beta_plot_data.trace_add("write", lambda *args: switch_plot_beta())
 
-# beta_dropdown = tk.OptionMenu(app, beta_plot, *beta_dd_menu)
-# beta_dropdown.pack()
-# beta_dd_button = tk.Button(app, text= "Select Plot", command = on_submit_plot)
-# beta_dd_button.pack()
+beta_dropdown = tk.OptionMenu(app, beta_plot_data, *beta_dd_menu)
+beta_dropdown.pack()
+# alpha_dd_button = tk.Button(app, text= "Select Plot", command = on_submit_plot)
+# alpha_dd_button.pack()
+
+plot_beta()
 
 # --------------------------------------------------------------------------------------------------------- #
 
@@ -327,10 +377,13 @@ if __name__ == "__main__":
     # set up all threads that we want to exist
     tf_current_data_thread = threading.Thread(target = receive_from_pynq)
     temperature_data_thread = threading.Thread(target = receive_temp_from_pynq)
+    pressure_data_thread = threading.Thread(target = receive_pressure)
+
 
     # start threads running
     tf_current_data_thread.start()
     temperature_data_thread.start()
+    pressure_data_thread.start()
     
     # start app window
     app.mainloop()
