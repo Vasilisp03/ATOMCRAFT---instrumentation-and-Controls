@@ -34,14 +34,14 @@ ROUTER_PORT4 = 1500
 HOST = '127.0.0.1'
 
 # Other constants
-DEFAULT_UPDATE_RATE = 50
-CURRENT_PLOT_UPDATE_RATE = 9
-TEMP_UPDATE_RATE = 50
+DEFAULT_UPDATE_RATE = 25
 
 # --------------------------------------------------------------------------------------------------------- #
 
 temperature_data = [0] * 100
 tf_current_data_received = [0] * 100
+y_alpha = [0] * 100
+y_beta = [0] * 100
 num_peripherals = 0
 running = 1
 global tf_current_plot
@@ -184,29 +184,30 @@ def on_submit_waveform():
 # --------------------------------------------------------------------------------------------------------- #
     
 # hopefully this function is cohesive enough that it works for plot alpha and beta
-def update_plot(plot_type, plotted, y, update_interval):
+def update_plot(plotted):
     update_lock.acquire()
     try:
-        if isinstance(y, (list, np.ndarray)):
+        if isinstance(y_alpha, (list, np.ndarray)):
             # Fill the plot with the cleaned, updated data
-            smoothed_y = savgol_filter(y, 7, 2)
+            smoothed_y = savgol_filter(y_alpha, 7, 2)
             plotted.clear()
-            plotted.plot(y, label = 'raw signal', color = 'blue')
+            plotted.plot(y_alpha, label = 'raw signal', color = 'blue')
             plotted.plot(smoothed_y, label = 'smoothed signal', color = 'red') 
             plotted.figure.canvas.draw_idle()
+        elif isinstance(y_beta, (list, np.ndarray)):
+            # Fill the plot with the cleaned, updated data
+            smoothed_y = savgol_filter(y_beta, 7, 2)
+            plotted.clear()
+            plotted.plot(y_beta, label = 'raw signal', color = 'blue')
+            plotted.plot(smoothed_y, label = 'smoothed signal', color = 'red') 
+            plotted.figure.canvas.draw_idle()
+            
         else:
             print("Invalid data type")
     finally:
         update_lock.release()
     
-    app.after(update_interval, lambda: update_plot(plot_type, plotted, y, update_interval))
-
-# --------------------------------------------------------------------------------------------------------- #
-
-# hopefully we can forego this button and have the plots change solely on the dd menu
-def on_submit_plot():
-    plot_to_graph = alpha_plot.get()
-    plot(plot_to_graph)
+    app.after(DEFAULT_UPDATE_RATE, lambda: update_plot(plotted))
     
 # --------------------------------------------------------------------------------------------------------- #
 
@@ -217,29 +218,15 @@ def plot_beta():
 # --------------------------------------------------------------------------------------------------------- #
 
 # rename to plot_alpha. need to extend functionality to be interchangeable graphs with different data
-def plot(plot_type):
-    if (plot_type == "None"):
-        return
-    
-    global tf_current_plot
-    global temperature_plot
-
+def plot_alpha():    
     fig = Figure(figsize = (5, 2), dpi = 100)
     plotted = fig.add_subplot(111) 
-
-    if (plot_type == "Current"):
-        update_interval = CURRENT_PLOT_UPDATE_RATE
-        y = tf_current_data_received
-    elif (plot_type == "Temperature"):
-        update_interval = TEMP_UPDATE_RATE
-        y = temperature_data
-
     
-    smoothed_y = savgol_filter(y, 7, 2)    
+    smoothed_y = savgol_filter(y_alpha, 7, 2)    
     plotted = fig.add_subplot(111) 
-    plotted.plot(y, label = 'raw signal', color = 'blue')
+    plotted.plot(y_alpha, label = 'raw signal', color = 'blue')
     plotted.plot(smoothed_y, label = 'smoothed signal', color = 'red') 
-    plotted.set_xlim(0, len(y))
+    plotted.set_xlim(0, len(y_alpha))
     # placeholder min max values until we can confirm our currents
     plotted.set_ylim(0, 100)
     canvas = FigureCanvasTkAgg(fig, master = app)   
@@ -249,7 +236,22 @@ def plot(plot_type):
     toolbar.update() 
     canvas.get_tk_widget().pack()
     
-    app.after(update_interval, lambda: update_plot(plot_type, plotted, y, update_interval))
+    app.after(DEFAULT_UPDATE_RATE, lambda: update_plot(plotted))
+
+# --------------------------------------------------------------------------------------------------------- #
+
+def switch_plot_alpha():
+    global y_alpha
+    data_to_plot = alpha_plot_data.get()
+    if (data_to_plot == "Current"):
+        y_alpha = tf_current_data_received
+    elif (data_to_plot == "Temperature"):
+        y_alpha = temperature_data
+    
+def switch_plot_beta(data_to_plot):
+    global y_beta
+    # data_to_plot = alpha_plot_data.get()
+    y_beta = data_to_plot
 
 # --------------------------------------------------------------------------------------------------------- #
 
@@ -295,13 +297,15 @@ tf_submit_button.pack()
 alpha_dd_menu = ["Current", "Temperature"]
 
 # dd for plot_alpha
-alpha_plot = tk.StringVar()
-alpha_plot.set("Select Variable To Plot") 
+alpha_plot_data = tk.StringVar()
+alpha_plot_data.set("Select Variable To Plot") 
 
-alpha_dropdown = tk.OptionMenu(app, alpha_plot, *alpha_dd_menu)
+alpha_dropdown = tk.OptionMenu(app, alpha_plot_data, *alpha_dd_menu, switch_plot_alpha())
 alpha_dropdown.pack()
-alpha_dd_button = tk.Button(app, text= "Select Plot", command = on_submit_plot)
-alpha_dd_button.pack()
+# alpha_dd_button = tk.Button(app, text= "Select Plot", command = on_submit_plot)
+# alpha_dd_button.pack()
+
+plot_alpha()
 
 # --------------------------------------------------------------------------------------------------------- #
 
