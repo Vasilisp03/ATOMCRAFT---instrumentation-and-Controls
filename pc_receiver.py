@@ -217,7 +217,7 @@ def update_plot(plotted, parent_plot):
 
 # rename to plot_alpha. need to extend functionality to be interchangeable graphs with different data
 def plot_alpha():    
-    fig = Figure(figsize = (5, 2), dpi = 100)
+    fig = Figure(figsize = (4, 3), dpi = 100)
     plotted = fig.add_subplot(111) 
     
     smoothed_y = savgol_filter(y_alpha, 7, 2)    
@@ -229,15 +229,15 @@ def plot_alpha():
     plotted.set_ylim(0, 100)
     canvas = FigureCanvasTkAgg(fig, master = app)   
     canvas.draw() 
-    canvas.get_tk_widget().pack() 
+    canvas.get_tk_widget().place(relx=0.39, rely=0.14) 
     toolbar = NavigationToolbar2Tk(canvas, app) 
     toolbar.update() 
-    canvas.get_tk_widget().pack()
+    canvas.get_tk_widget().place(relx=0.39, rely=0.14) 
     
     app.after(DEFAULT_UPDATE_RATE, lambda: update_plot(plotted, "alpha"))
     
 def plot_beta():    
-    fig = Figure(figsize = (5, 2), dpi = 100)
+    fig = Figure(figsize = (4, 3), dpi = 100)
     plotted = fig.add_subplot(111) 
     
     smoothed_y = savgol_filter(y_beta, 7, 2)    
@@ -249,10 +249,10 @@ def plot_beta():
     plotted.set_ylim(0, 100)
     canvas = FigureCanvasTkAgg(fig, master = app)   
     canvas.draw() 
-    canvas.get_tk_widget().pack() 
+    canvas.get_tk_widget().place(relx=0.70, rely=0.14) 
     toolbar = NavigationToolbar2Tk(canvas, app) 
     toolbar.update() 
-    canvas.get_tk_widget().pack()
+    canvas.get_tk_widget().place(relx=0.70, rely=0.14) 
     
     app.after(DEFAULT_UPDATE_RATE, lambda: update_plot(plotted, "beta"))
 
@@ -306,7 +306,6 @@ def exit():
     running = 0
     check_threads()
 
-
 # --------------------------------------------------------------------------------------------------------- #
 
 # programs title
@@ -314,25 +313,41 @@ app = tk.Tk()
 app.title("AtomCraft Controller")
 app.geometry("1920x1080")
 
+
+# --------------------------------------------------------------------------------------------------------- #
+
+# Making program frames
+
+left_frame = tk.Frame(app, width=495, height=695, bg="darkgrey", bd=2, relief="solid")
+left_frame.place(relx=0, rely=0)
+
+plot_frame = tk.Frame(app, width=1425, height=695, bg="lightgrey", bd=2, relief="solid")
+plot_frame.place(relx=0.26, rely=0)
+
+bottom_frame = tk.Frame(app, width=1920, height=485, bg="grey", bd=2, relief="solid")
+bottom_frame.place(relx=0, rely=0.644)
+# --------------------------------------------------------------------------------------------------------- #
+
+
 # just a simple label
-label = tk.Label(app, text="Enter 4 points to outline tf coil current (1st is commands, 2nd is waveform)")
-label.pack()
+label = tk.Label(app, text="Enter 4 points to outline tf coil current \n(1st is commands, 2nd is waveform)", background='darkgrey', fg='black')
+label.place(relx=0.039, rely=0.069) 
 
-entry = tk.Entry(app)
-entry.pack()
+entry = tk.Entry(app, highlightbackground='darkgrey')
+entry.place(relx=0.039, rely=0.125) 
 
-tf_entry = tk.Entry(app)
-tf_entry.pack()
+tf_entry = tk.Entry(app, highlightbackground='darkgrey')
+tf_entry.place(relx=0.039, rely=0.16) 
 
 # simple button to submit whatever
-submit_button = tk.Button(app, text="send command", command = on_submit)
-submit_button.pack()
+submit_button = tk.Button(app, text="send command", command = on_submit, highlightbackground='darkgrey')
+submit_button.place(relx=0.039, rely=0.20) 
 
-tf_submit_button = tk.Button(app, text="send waveform", command = on_submit_waveform)
-tf_submit_button.pack()
+tf_submit_button = tk.Button(app, text="send waveform", command = on_submit_waveform, highlightbackground='darkgrey')
+tf_submit_button.place(relx=0.039, rely=0.24) 
 
-number_label = tk.Label(app, text="0.00", font=("Helvetica", 48))
-number_label.pack(pady=20)
+number_label = tk.Label(app, text="0.00", font=("Helvetica", 48), background='grey')
+number_label.place(relx=0.095, rely=0.75)
 
 # --------------------------------------------------------------------------------------------------------- #
 
@@ -344,10 +359,10 @@ alpha_plot_data.set("Select Variable To Plot")
 alpha_plot_data.trace_add("write", lambda *args: switch_plot_alpha())
 
 alpha_dropdown = tk.OptionMenu(app, alpha_plot_data, *alpha_dd_menu)
-alpha_dropdown.pack()
-# alpha_dd_button = tk.Button(app, text= "Select Plot", command = on_submit_plot)
-# alpha_dd_button.pack()
 
+alpha_dropdown.config(activebackground="lightgrey", bg="lightgrey", activeforeground="black", fg="black")
+
+alpha_dropdown.place(relx=0.39, rely=0.093) 
 plot_alpha()
 
 # --------------------------------------------------------------------------------------------------------- #
@@ -360,16 +375,17 @@ beta_plot_data.set("Select Variable To Plot")
 beta_plot_data.trace_add("write", lambda *args: switch_plot_beta())
 
 beta_dropdown = tk.OptionMenu(app, beta_plot_data, *beta_dd_menu)
-beta_dropdown.pack()
-# alpha_dd_button = tk.Button(app, text= "Select Plot", command = on_submit_plot)
-# alpha_dd_button.pack()
+
+beta_dropdown.config(activebackground="lightgrey", bg="lightgrey", activeforeground="black", fg="black")
+
+beta_dropdown.place(relx=0.70, rely=0.093) 
 
 plot_beta()
 
 # --------------------------------------------------------------------------------------------------------- #
 
-exit_button = tk.Button(app, text="Exit (gracefully)", command = exit)
-exit_button.pack()
+exit_button = tk.Button(app, text="Exit (gracefully)", command = exit, highlightbackground='lightgrey')
+exit_button.place(relx=0.9, rely=0.025) 
 
 # --------------------------------------------------------------------------------------------------------- #
 
