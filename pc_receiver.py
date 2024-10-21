@@ -289,7 +289,7 @@ def receive_pressure():
         with contextlib.suppress(timeout):
             msg, _ = s_sock.recvfrom(1024)
             decoded_lsp = msg.decode()
-            number_label.config(text=decoded_lsp)
+            number_label1.config(text=decoded_lsp)
 
 # --------------------------------------------------------------------------------------------------------- #
 
@@ -311,43 +311,87 @@ def exit():
 # programs title
 app = tk.Tk()
 app.title("AtomCraft Controller")
-app.geometry("1920x1080")
+app.geometry("1440x900")
 
 
 # --------------------------------------------------------------------------------------------------------- #
 
 # Making program frames
 
-left_frame = tk.Frame(app, width=495, height=695, bg="darkgrey", bd=2, relief="solid")
+# for 19201080 res
+# plot_frame = tk.Frame(app, width=1425, height=695, bg="lightgrey", bd=1, relief="solid")
+# plot_frame.place(relx=0.26, rely=0)
+
+# left_frame = tk.Frame(app, width=495, height=695, bg="darkgrey", bd=1, relief="solid")
+# left_frame.place(relx=0, rely=0)
+
+# bottom_frame = tk.Frame(app, width=1920, height=485, bg="grey", bd=1, relief="solid")
+# bottom_frame.place(relx=0, rely=0.644)
+
+# for 1440x900 res
+plot_frame = tk.Frame(app, width=10000, height=695, bg="#000d18", bd=1, relief="solid")
+plot_frame.place(relx=0.21, rely=0)
+
+left_frame = tk.Frame(app, width=320, height=695, bg="#060621", bd=1, relief="solid")
 left_frame.place(relx=0, rely=0)
 
-plot_frame = tk.Frame(app, width=1425, height=695, bg="lightgrey", bd=2, relief="solid")
-plot_frame.place(relx=0.26, rely=0)
-
-bottom_frame = tk.Frame(app, width=1920, height=485, bg="grey", bd=2, relief="solid")
+bottom_frame = tk.Frame(app, width=1920, height=485, bg="#060621", bd=1, relief="solid")
 bottom_frame.place(relx=0, rely=0.644)
+
+# --------------------------------------------------------------------------------------------------------- #
+# Dividing lines
+
+canvas = tk.Canvas(app, width=1.5, height=300, bg="#1e4e77", highlightthickness=0)
+canvas.place(relx=0.249, rely=0.644)
+canvas.create_line(1, 579, 1, 900, fill="black")
+
+canvas2 = tk.Canvas(app, width=1.5, height=300, bg="#1e4e77", highlightthickness=0)
+canvas2.place(relx=0.5, rely=0.644)
+canvas2.create_line(1, 579, 1, 900, fill="black")
+
+canvas2 = tk.Canvas(app, width=1.5, height=300, bg="#1e4e77", highlightthickness=0)
+canvas2.place(relx=0.75, rely=0.644)
+canvas2.create_line(1, 579, 1, 900, fill="black")
+
+canvas2 = tk.Canvas(app, width=2000, height=1.5, bg="#1e4e77", highlightthickness=0)
+canvas2.place(relx=0, rely=0.644)
+canvas2.create_line(1, 579, 1, 900, fill="black")
+
+canvas2 = tk.Canvas(app, width=1.5, height=515, bg="#1e4e77", highlightthickness=0)
+canvas2.place(relx=0.21, rely=0)
+canvas2.create_line(1, 1, 1.5, 695, fill="black")
+
 # --------------------------------------------------------------------------------------------------------- #
 
 
 # just a simple label
-label = tk.Label(app, text="Enter 4 points to outline tf coil current \n(1st is commands, 2nd is waveform)", background='darkgrey', fg='black')
-label.place(relx=0.039, rely=0.069) 
+label = tk.Label(left_frame, text="Enter 4 points to outline tf coil current\n(1st is commands, 2nd is waveform)", background='darkgrey', fg='black', font=("Comic Sans MS", 20), bd=2, relief="solid")
+label.place(relx=0.21, rely=0.1) 
 
-entry = tk.Entry(app, highlightbackground='darkgrey')
-entry.place(relx=0.039, rely=0.125) 
+entry = tk.Entry(left_frame, highlightbackground='darkgrey')
+entry.place(relx=0.25, rely=0.15) 
 
-tf_entry = tk.Entry(app, highlightbackground='darkgrey')
-tf_entry.place(relx=0.039, rely=0.16) 
+tf_entry = tk.Entry(left_frame, highlightbackground='darkgrey')
+tf_entry.place(relx=0.25, rely=0.2) 
 
 # simple button to submit whatever
-submit_button = tk.Button(app, text="send command", command = on_submit, highlightbackground='darkgrey')
-submit_button.place(relx=0.039, rely=0.20) 
+submit_button = tk.Button(left_frame, text="send command", command = on_submit, highlightbackground='darkgrey')
+submit_button.place(relx=0.25, rely=0.25) 
 
-tf_submit_button = tk.Button(app, text="send waveform", command = on_submit_waveform, highlightbackground='darkgrey')
-tf_submit_button.place(relx=0.039, rely=0.24) 
+tf_submit_button = tk.Button(left_frame, text="send waveform", command = on_submit_waveform, highlightbackground='darkgrey')
+tf_submit_button.place(relx=0.25, rely=0.3) 
 
-number_label = tk.Label(app, text="0.00", font=("Helvetica", 48), background='grey')
-number_label.place(relx=0.095, rely=0.75)
+number_label1 = tk.Label(app, text="0.00", font=("Comic Sans MS", 48), background='#060621', bd=2, relief="solid")
+number_label1.place(relx=0.095, rely=0.75)
+
+number_label2 = tk.Label(app, text="0.00", font=("Comic Sans MS", 48), background='#060621')
+number_label2.place(relx=0.345, rely=0.75)
+
+number_label3 = tk.Label(app, text="0.00", font=("Comic Sans MS", 48), background='#060621')
+number_label3.place(relx=0.595, rely=0.75)
+
+number_label4 = tk.Label(app, text="0.00", font=("Comic Sans MS", 48), background='#060621')
+number_label4.place(relx=0.845, rely=0.75)
 
 # --------------------------------------------------------------------------------------------------------- #
 
