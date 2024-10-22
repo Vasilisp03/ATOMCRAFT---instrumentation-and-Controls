@@ -218,7 +218,10 @@ def update_plot(plotted, parent_plot):
 # rename to plot_alpha. need to extend functionality to be interchangeable graphs with different data
 def plot_alpha():    
     fig = Figure(figsize = (4, 3), dpi = 100)
-    plotted = fig.add_subplot(111) 
+    fig.set_facecolor('#1D1D1D')
+
+    plotted = fig.add_subplot(111)
+    # plotted.set_facecolor('black')
     
     smoothed_y = savgol_filter(y_alpha, 7, 2)    
     plotted = fig.add_subplot(111) 
@@ -227,17 +230,30 @@ def plot_alpha():
     plotted.set_xlim(0, len(y_alpha))
     # placeholder min max values until we can confirm our currents
     plotted.set_ylim(0, 100)
+
+    # Set the color of the axis labels and ticks
+    plotted.spines['bottom'].set_color('#C65D3B')
+    plotted.spines['top'].set_color('#C65D3B')
+    plotted.spines['right'].set_color('#C65D3B')
+    plotted.spines['left'].set_color('#C65D3B')
+    plotted.xaxis.label.set_color('#C65D3B')
+    plotted.yaxis.label.set_color('#C65D3B')
+    plotted.tick_params(axis='x', colors='white')
+    plotted.tick_params(axis='y', colors='white')
+
     canvas = FigureCanvasTkAgg(fig, master = app)   
     canvas.draw() 
-    canvas.get_tk_widget().place(relx=0.39, rely=0.14) 
+    canvas.get_tk_widget().place(relx=0.3, rely=0.14) 
     toolbar = NavigationToolbar2Tk(canvas, app) 
     toolbar.update() 
-    canvas.get_tk_widget().place(relx=0.39, rely=0.14) 
+    canvas.get_tk_widget().place(relx=0.3, rely=0.14) 
     
     app.after(DEFAULT_UPDATE_RATE, lambda: update_plot(plotted, "alpha"))
     
 def plot_beta():    
     fig = Figure(figsize = (4, 3), dpi = 100)
+    fig.set_facecolor('#1D1D1D')
+
     plotted = fig.add_subplot(111) 
     
     smoothed_y = savgol_filter(y_beta, 7, 2)    
@@ -247,12 +263,23 @@ def plot_beta():
     plotted.set_xlim(0, len(y_alpha))
     # placeholder min max values until we can confirm our currents
     plotted.set_ylim(0, 100)
+
+    # Set the color of the axis labels and ticks
+    plotted.spines['bottom'].set_color('#C65D3B')
+    plotted.spines['top'].set_color('#C65D3B')
+    plotted.spines['right'].set_color('#C65D3B')
+    plotted.spines['left'].set_color('#C65D3B')
+    plotted.xaxis.label.set_color('#C65D3B')
+    plotted.yaxis.label.set_color('#C65D3B')
+    plotted.tick_params(axis='x', colors='white')
+    plotted.tick_params(axis='y', colors='white')
+
     canvas = FigureCanvasTkAgg(fig, master = app)   
     canvas.draw() 
-    canvas.get_tk_widget().place(relx=0.70, rely=0.14) 
+    canvas.get_tk_widget().place(relx=0.65, rely=0.14) 
     toolbar = NavigationToolbar2Tk(canvas, app) 
     toolbar.update() 
-    canvas.get_tk_widget().place(relx=0.70, rely=0.14) 
+    canvas.get_tk_widget().place(relx=0.65, rely=0.14) 
     
     app.after(DEFAULT_UPDATE_RATE, lambda: update_plot(plotted, "beta"))
 
@@ -329,66 +356,78 @@ app.geometry("1440x900")
 # bottom_frame.place(relx=0, rely=0.644)
 
 # for 1440x900 res
-plot_frame = tk.Frame(app, width=10000, height=695, bg="#000d18", bd=1, relief="solid")
+plot_frame = tk.Frame(app, width=10000, height=695, bg="#1D1D1D", bd=1, relief="solid")
 plot_frame.place(relx=0.21, rely=0)
 
-left_frame = tk.Frame(app, width=320, height=695, bg="#060621", bd=1, relief="solid")
+left_frame = tk.Frame(app, width=320, height=695, bg="#005B5C", bd=1, relief="solid")
 left_frame.place(relx=0, rely=0)
 
-bottom_frame = tk.Frame(app, width=1920, height=485, bg="#060621", bd=1, relief="solid")
+bottom_frame = tk.Frame(app, width=1920, height=485, bg="#005B5C", bd=1, relief="solid")
 bottom_frame.place(relx=0, rely=0.644)
 
 # --------------------------------------------------------------------------------------------------------- #
 # Dividing lines
 
-canvas = tk.Canvas(app, width=1.5, height=300, bg="#1e4e77", highlightthickness=0)
+canvas = tk.Canvas(app, width=1.5, height=300, bg="#C65D3B", highlightthickness=0)
 canvas.place(relx=0.249, rely=0.644)
 canvas.create_line(1, 579, 1, 900, fill="black")
 
-canvas2 = tk.Canvas(app, width=1.5, height=300, bg="#1e4e77", highlightthickness=0)
+canvas2 = tk.Canvas(app, width=1.5, height=300, bg="#C65D3B", highlightthickness=0)
 canvas2.place(relx=0.5, rely=0.644)
 canvas2.create_line(1, 579, 1, 900, fill="black")
 
-canvas2 = tk.Canvas(app, width=1.5, height=300, bg="#1e4e77", highlightthickness=0)
+canvas2 = tk.Canvas(app, width=1.5, height=300, bg="#C65D3B", highlightthickness=0)
 canvas2.place(relx=0.75, rely=0.644)
 canvas2.create_line(1, 579, 1, 900, fill="black")
 
-canvas2 = tk.Canvas(app, width=2000, height=1.5, bg="#1e4e77", highlightthickness=0)
+canvas2 = tk.Canvas(app, width=2000, height=1.5, bg="#C65D3B", highlightthickness=0)
 canvas2.place(relx=0, rely=0.644)
 canvas2.create_line(1, 579, 1, 900, fill="black")
 
-canvas2 = tk.Canvas(app, width=1.5, height=515, bg="#1e4e77", highlightthickness=0)
-canvas2.place(relx=0.21, rely=0)
+canvas2 = tk.Canvas(app, width=1.5, height=507, bg="#C65D3B", highlightthickness=0)
+canvas2.place(relx=0.221, rely=0)
 canvas2.create_line(1, 1, 1.5, 695, fill="black")
 
 # --------------------------------------------------------------------------------------------------------- #
 
 
 # just a simple label
-label = tk.Label(left_frame, text="Enter 4 points to outline tf coil current\n(1st is commands, 2nd is waveform)", background='darkgrey', fg='black', font=("Comic Sans MS", 20), bd=2, relief="solid")
-label.place(relx=0.21, rely=0.1) 
+label = tk.Label(left_frame, text="Enter 4 points to outline tf coil current\n(1st is commands, 2nd is waveform)", background='darkgrey', fg='black', font=("Comic Sans MS", 15), bd=2, relief="solid")
+label.place(relx=0.10, rely=0.075) 
 
 entry = tk.Entry(left_frame, highlightbackground='darkgrey')
-entry.place(relx=0.25, rely=0.15) 
+entry.place(relx=0.20, rely=0.15) 
 
 tf_entry = tk.Entry(left_frame, highlightbackground='darkgrey')
-tf_entry.place(relx=0.25, rely=0.2) 
+tf_entry.place(relx=0.20, rely=0.2) 
 
 # simple button to submit whatever
-submit_button = tk.Button(left_frame, text="send command", command = on_submit, highlightbackground='darkgrey')
-submit_button.place(relx=0.25, rely=0.25) 
+submit_button = tk.Button(left_frame, text="send command", command = on_submit, highlightbackground='#005B5C')
+submit_button.place(relx=0.30, rely=0.25) 
 
-tf_submit_button = tk.Button(left_frame, text="send waveform", command = on_submit_waveform, highlightbackground='darkgrey')
-tf_submit_button.place(relx=0.25, rely=0.3) 
+tf_submit_button = tk.Button(left_frame, text="send waveform", command = on_submit_waveform, highlightbackground='#005B5C')
+tf_submit_button.place(relx=0.30, rely=0.3)
+
+number_label1_title = tk.Label(app, text="Pressure", font=("Comic Sans MS", 20), background='#060621', bd=2, relief="solid")
+number_label1_title.place(relx=0.102, rely=0.70)
 
 number_label1 = tk.Label(app, text="0.00", font=("Comic Sans MS", 48), background='#060621', bd=2, relief="solid")
 number_label1.place(relx=0.095, rely=0.75)
 
+number_label2_title = tk.Label(app, text="Measurement 2", font=("Comic Sans MS", 20), background='#060621', bd=2, relief="solid")
+number_label2_title.place(relx=0.33, rely=0.70)
+
 number_label2 = tk.Label(app, text="0.00", font=("Comic Sans MS", 48), background='#060621')
 number_label2.place(relx=0.345, rely=0.75)
 
+number_label3_title = tk.Label(app, text="Measurement 3", font=("Comic Sans MS", 20), background='#060621', bd=2, relief="solid")
+number_label3_title.place(relx=0.581, rely=0.70)
+
 number_label3 = tk.Label(app, text="0.00", font=("Comic Sans MS", 48), background='#060621')
 number_label3.place(relx=0.595, rely=0.75)
+
+number_label4_title = tk.Label(app, text="Measurement 4", font=("Comic Sans MS", 20), background='#060621', bd=2, relief="solid")
+number_label4_title.place(relx=0.83, rely=0.70)
 
 number_label4 = tk.Label(app, text="0.00", font=("Comic Sans MS", 48), background='#060621')
 number_label4.place(relx=0.845, rely=0.75)
@@ -404,9 +443,9 @@ alpha_plot_data.trace_add("write", lambda *args: switch_plot_alpha())
 
 alpha_dropdown = tk.OptionMenu(app, alpha_plot_data, *alpha_dd_menu)
 
-alpha_dropdown.config(activebackground="lightgrey", bg="lightgrey", activeforeground="black", fg="black")
+alpha_dropdown.config(activebackground="lightgrey", bg="#1D1D1D", activeforeground="black", fg="white")
 
-alpha_dropdown.place(relx=0.39, rely=0.093) 
+alpha_dropdown.place(relx=0.3, rely=0.1) 
 plot_alpha()
 
 # --------------------------------------------------------------------------------------------------------- #
@@ -420,15 +459,15 @@ beta_plot_data.trace_add("write", lambda *args: switch_plot_beta())
 
 beta_dropdown = tk.OptionMenu(app, beta_plot_data, *beta_dd_menu)
 
-beta_dropdown.config(activebackground="lightgrey", bg="lightgrey", activeforeground="black", fg="black")
+beta_dropdown.config(activebackground="lightgrey", bg="#1D1D1D", activeforeground="black", fg="white")
 
-beta_dropdown.place(relx=0.70, rely=0.093) 
+beta_dropdown.place(relx=0.65, rely=0.1) 
 
 plot_beta()
 
 # --------------------------------------------------------------------------------------------------------- #
 
-exit_button = tk.Button(app, text="Exit (gracefully)", command = exit, highlightbackground='lightgrey')
+exit_button = tk.Button(app, text="Exit (gracefully)", command = exit, highlightbackground='#1D1D1D')
 exit_button.place(relx=0.9, rely=0.025) 
 
 # --------------------------------------------------------------------------------------------------------- #
