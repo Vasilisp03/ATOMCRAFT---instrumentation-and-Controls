@@ -111,6 +111,7 @@ def drive_tf_current(reference_current):
     # what we do here is some mapping and that to of the received linearly interpolated data and drive that
     # through the pmod port to the current control system. just placeholder for now.
     mapped_waveform = map_pynq_pmod(reference_current)
+    send_data()
     
     # This is where the PYNQ code will go using the mapped waveform, for now we will just send it back to the PC
     # print("Mapped waveform:", mapped_waveform)
@@ -200,16 +201,16 @@ def placeholder_pressure_starter():
 
 # --------------------------------------------------------------------------------------------------------- #
 
-def start_send_thread():
-    start_send_data = threading.Thread(target = send_data)
-    # start_tf_drive = threading.Thread(target = drive_tf_current)
-    start_send_data.start()
-    # start_tf_drive.start()
+# def start_send_thread():
+#     start_send_data = threading.Thread(target = send_data)
+#     # start_tf_drive = threading.Thread(target = drive_tf_current)
+#     start_send_data.start()
+#     # start_tf_drive.start()
 
 # --------------------------------------------------------------------------------------------------------- #
 
 commands = {
-    "start control loop": start_send_thread,
+    # "start control loop": start_send_thread,
     "temperature test": placeholder_temperature_starter,
     "pressure test": placeholder_pressure_starter
 }

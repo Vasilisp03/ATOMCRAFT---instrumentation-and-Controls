@@ -544,9 +544,17 @@ exit_button.place(relx=0.9, rely=0.025)
 
 # --------------------------------------------------------------------------------------------------------- #
 
+def handle_pynq_commands():
+    pass
+
+# --------------------------------------------------------------------------------------------------------- #
+
+
 commands = {
     "clear": clearDB,
     "start control loop": prompt_for_waveform,
+    "temperature test": handle_pynq_commands,
+    "pressure test": handle_pynq_commands,
 }
 
 def handle_command(command):
