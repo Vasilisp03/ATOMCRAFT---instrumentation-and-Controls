@@ -488,28 +488,28 @@ entry.place(relx=0.20, rely=0.05)
 # tf_submit_button = tk.Button(left_frame, text="send waveform", command = on_submit_waveform, highlightbackground='#005B5C')
 # tf_submit_button.place(relx=0.30, rely=0.3)
 
-number_label1_title = tk.Label(app, text="Pressure", font=("Comic Sans MS", 20), background='#060621', bd=2, relief="solid")
+number_label1_title = tk.Label(app, text="Pressure", font=("Verdana", 20), background='#060621', bd=2, relief="solid")
 number_label1_title.place(relx=0.102, rely=0.70)
 
-number_label1 = tk.Label(app, text="0.00", font=("Comic Sans MS", 48), background='#060621', bd=2, relief="solid")
+number_label1 = tk.Label(app, text="0.00", font=("Verdana", 48), background='#060621', bd=2, relief="solid")
 number_label1.place(relx=0.095, rely=0.75)
 
-number_label2_title = tk.Label(app, text="Measurement 2", font=("Comic Sans MS", 20), background='#060621', bd=2, relief="solid")
+number_label2_title = tk.Label(app, text="Measurement 2", font=("Verdana", 20), background='#060621', bd=2, relief="solid")
 number_label2_title.place(relx=0.33, rely=0.70)
 
-number_label2 = tk.Label(app, text="0.00", font=("Comic Sans MS", 48), background='#060621')
+number_label2 = tk.Label(app, text="0.00", font=("Verdana", 48), background='#060621')
 number_label2.place(relx=0.345, rely=0.75)
 
-number_label3_title = tk.Label(app, text="Measurement 3", font=("Comic Sans MS", 20), background='#060621', bd=2, relief="solid")
+number_label3_title = tk.Label(app, text="Measurement 3", font=("Verdana", 20), background='#060621', bd=2, relief="solid")
 number_label3_title.place(relx=0.581, rely=0.70)
 
-number_label3 = tk.Label(app, text="0.00", font=("Comic Sans MS", 48), background='#060621')
+number_label3 = tk.Label(app, text="0.00", font=("Verdana", 48), background='#060621')
 number_label3.place(relx=0.595, rely=0.75)
 
-number_label4_title = tk.Label(app, text="Measurement 4", font=("Comic Sans MS", 20), background='#060621', bd=2, relief="solid")
+number_label4_title = tk.Label(app, text="Measurement 4", font=("Verdana", 20), background='#060621', bd=2, relief="solid")
 number_label4_title.place(relx=0.83, rely=0.70)
 
-number_label4 = tk.Label(app, text="0.00", font=("Comic Sans MS", 48), background='#060621')
+number_label4 = tk.Label(app, text="0.00", font=("Verdana", 48), background='#060621')
 number_label4.place(relx=0.845, rely=0.75)
 
 # --------------------------------------------------------------------------------------------------------- #
