@@ -548,7 +548,7 @@ plot_beta()
 # --------------------------------------------------------------------------------------------------------- #
 
 create_database()
-listbox = tk.Listbox(left_frame, height=21, width=33);
+listbox = tk.Listbox(left_frame, height=25, width=33)
 listbox.place(relx=0.028, rely=0.1)
 update_listbox()
 
