@@ -464,8 +464,8 @@ canvas2 = tk.Canvas(app, width=2000, height=1.5, bg="#C65D3B", highlightthicknes
 canvas2.place(relx=0, rely=0.644)
 canvas2.create_line(1, 579, 1, 900, fill="black")
 
-canvas2 = tk.Canvas(app, width=1.5, height=507, bg="#C65D3B", highlightthickness=0)
-canvas2.place(relx=0.249, rely=0)
+canvas2 = tk.Canvas(app, width=1.5, height=511, bg="#C65D3B", highlightthickness=0)
+canvas2.place(relx=0.22, rely=0)
 canvas2.create_line(1, 1, 1.5, 695, fill="black")
 
 # --------------------------------------------------------------------------------------------------------- #
