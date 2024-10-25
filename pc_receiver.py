@@ -16,6 +16,7 @@ import numpy as np
 from scipy.signal import savgol_filter 
 from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
+import re
 
 # Receive TF Coil Current address
 ROUTER_PORT = 1300
@@ -48,6 +49,8 @@ y_alpha = [0] * 100
 y_beta = [0] * 100
 num_peripherals = 0
 running = 1
+global waiting_for_waveform
+waiting_for_waveform = False
 global tf_current_plot
 global temperature_plot
 update_lock = threading.Lock()
@@ -146,19 +149,62 @@ def create_database():
     conn.commit()
     conn.close()
 
-# ---------------,------------------------------------------------------------------------------------------ #
+# ---------------------------------------------------------------------------------------------------------- #
 
-def on_submit():
+def on_submit(event = None):
+    global waiting_for_waveform
     command = entry.get()
-    send_instructions(command)
+    add_to_db(command)
+    if (waiting_for_waveform):
+        input_waveform = command.split(',')
+
+
+        if (len(input_waveform) == 8 and all(bool(re.search(r'\d', input_waveform))) for i in input_waveform):
+            input_waveform_ints = np.array(input_waveform, dtype=int)
+            waiting_for_waveform = False
+            on_submit_waveform(input_waveform_ints)
+        
+        else:
+            add_to_db("Invalid waveform input")
+
+    else:
+        handle_command(command)
+        send_instructions(command)
+
+# --------------------------------------------------------------------------------------------------------- #
+
+def add_to_db(name):
+    conn = sqlite3.connect("names.db")
+    c = conn.cursor()
+
+    c.execute("INSERT INTO names (name) VALUES (?)", (name,))
+    conn.commit()
+    conn.close()
+
+    update_listbox()
+
+# --------------------------------------------------------------------------------------------------------- #
+
+def update_listbox():
+    conn = sqlite3.connect("names.db")
+    c = conn.cursor()
+
+    c.execute("SELECT * FROM names")
+    rows = c.fetchall()
+
+    listbox.delete(0, tk.END)
+    for row in rows:
+        listbox.insert(tk.END, row[1])
+
+    conn.close()
 
 # --------------------------------------------------------------------------------------------------------- #
 
 def linear_interp(waveform):
-    waveform_list = waveform.split(',')
-    waveform_points_array = np.array(waveform_list, dtype=int)
-    x_points = waveform_points_array[:4]
-    y_points = waveform_points_array[4:8]
+    # waveform_list = waveform.split(',')
+    # waveform_points_array = np.array(waveform_list, dtype=int)
+    x_points = waveform[:4]
+    y_points = waveform[4:8]
     waveform_interpolated = interp1d(x_points, y_points, kind='linear')
     x_new = np.linspace(1, x_points[3], num=100, endpoint=True)
 
@@ -169,21 +215,17 @@ def linear_interp(waveform):
 
 # --------------------------------------------------------------------------------------------------------- #
 
-
-def on_submit_waveform():
-    waveform = tf_entry.get()
+def on_submit_waveform(waveform):
+    # waveform = entry.get()
     interpolated = linear_interp(waveform)
     send_waveform(interpolated)
 
-    # if we really want to we can plot the ref current but its not necessary until after we receive the measured
-    # current back from the pynq
-    
-    # plt.plot(x_new, interpolated_points, '-', label='Reference Current')
-    # plt.xlabel('x')
-    # plt.ylabel('y')
-    # plt.title('Reference Current')
-    # plt.legend()
-    # plt.show()
+def prompt_for_waveform():
+    global waiting_for_waveform
+    waiting_for_waveform = True
+
+    add_to_db("Input time scale and key points (E.g. 1, 2, 3, 4, 1, 10, 10, 1):")
+
     
 # --------------------------------------------------------------------------------------------------------- #
     
@@ -328,6 +370,27 @@ def check_threads():
     
 # --------------------------------------------------------------------------------------------------------- #
 
+def create_database():
+    conn = sqlite3.connect("names.db")
+    c = conn.cursor()
+
+    c.execute("""CREATE TABLE IF NOT EXISTS names (id INTEGER PRIMARY KEY,name TEXT)""")
+    conn.commit()
+    conn.close()
+
+def clearDB():
+    conn = sqlite3.connect("names.db")
+    c = conn.cursor()
+
+    c.execute("DELETE FROM names")
+
+    conn.commit()
+    conn.close()
+
+    update_listbox()
+
+# --------------------------------------------------------------------------------------------------------- #
+
 def exit():
     global running
     running = 0
@@ -385,7 +448,7 @@ canvas2.place(relx=0, rely=0.644)
 canvas2.create_line(1, 579, 1, 900, fill="black")
 
 canvas2 = tk.Canvas(app, width=1.5, height=507, bg="#C65D3B", highlightthickness=0)
-canvas2.place(relx=0.221, rely=0)
+canvas2.place(relx=0.249, rely=0)
 canvas2.create_line(1, 1, 1.5, 695, fill="black")
 
 # --------------------------------------------------------------------------------------------------------- #
@@ -395,11 +458,11 @@ canvas2.create_line(1, 1, 1.5, 695, fill="black")
 label = tk.Label(left_frame, text="Enter 4 points to outline tf coil current\n(1st is commands, 2nd is waveform)", background='darkgrey', fg='black', font=("Comic Sans MS", 15), bd=2, relief="solid")
 label.place(relx=0.10, rely=0.075) 
 
-entry = tk.Entry(left_frame, highlightbackground='darkgrey')
+entry = tk.Entry(left_frame, highlightbackground='#005B5C')
 entry.place(relx=0.20, rely=0.15) 
 
-tf_entry = tk.Entry(left_frame, highlightbackground='darkgrey')
-tf_entry.place(relx=0.20, rely=0.2) 
+# tf_entry = tk.Entry(left_frame, highlightbackground='#005B5C')
+# tf_entry.place(relx=0.20, rely=0.2) 
 
 # simple button to submit whatever
 submit_button = tk.Button(left_frame, text="send command", command = on_submit, highlightbackground='#005B5C')
@@ -467,10 +530,33 @@ plot_beta()
 
 # --------------------------------------------------------------------------------------------------------- #
 
+create_database()
+listbox = tk.Listbox(left_frame);
+listbox.place(relx=0.2, rely=0.2)
+update_listbox()
+
+app.bind('<Return>', on_submit)
+
+# --------------------------------------------------------------------------------------------------------- #
+
 exit_button = tk.Button(app, text="Exit (gracefully)", command = exit, highlightbackground='#1D1D1D')
 exit_button.place(relx=0.9, rely=0.025) 
 
 # --------------------------------------------------------------------------------------------------------- #
+
+commands = {
+    "clear": clearDB,
+    "start control loop": prompt_for_waveform,
+}
+
+def handle_command(command):
+    if command in commands:
+        commands[command]()
+    else:
+        add_to_db("Invalid command")
+
+# --------------------------------------------------------------------------------------------------------- #
+
 
 if __name__ == "__main__":
     # set up all threads that we want to exist
