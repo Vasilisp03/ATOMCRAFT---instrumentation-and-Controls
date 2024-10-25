@@ -170,6 +170,8 @@ def on_submit(event = None):
     else:
         handle_command(command)
         send_instructions(command)
+    
+    entry.delete(0, tk.END)
 
 # --------------------------------------------------------------------------------------------------------- #
 
@@ -224,7 +226,8 @@ def prompt_for_waveform():
     global waiting_for_waveform
     waiting_for_waveform = True
 
-    add_to_db("Input time scale and key points (E.g. 1, 2, 3, 4, 1, 10, 10, 1):")
+    add_to_db("Input time scale and key points")
+    add_to_db("(E.g. 1, 2, 3, 4, 1, 10, 10, 1):")
 
     
 # --------------------------------------------------------------------------------------------------------- #
@@ -455,21 +458,21 @@ canvas2.create_line(1, 1, 1.5, 695, fill="black")
 
 
 # just a simple label
-label = tk.Label(left_frame, text="Enter 4 points to outline tf coil current\n(1st is commands, 2nd is waveform)", background='darkgrey', fg='black', font=("Comic Sans MS", 15), bd=2, relief="solid")
-label.place(relx=0.10, rely=0.075) 
+# label = tk.Label(left_frame, text="Enter 4 points to outline tf coil current\n(1st is commands, 2nd is waveform)", background='darkgrey', fg='black', font=("Comic Sans MS", 15), bd=2, relief="solid")
+# label.place(relx=0.10, rely=0.075)
 
 entry = tk.Entry(left_frame, highlightbackground='#005B5C')
-entry.place(relx=0.20, rely=0.15) 
+entry.place(relx=0.20, rely=0.05) 
 
 # tf_entry = tk.Entry(left_frame, highlightbackground='#005B5C')
 # tf_entry.place(relx=0.20, rely=0.2) 
 
 # simple button to submit whatever
-submit_button = tk.Button(left_frame, text="send command", command = on_submit, highlightbackground='#005B5C')
-submit_button.place(relx=0.30, rely=0.25) 
+# submit_button = tk.Button(left_frame, text="send command", command = on_submit, highlightbackground='#005B5C')
+# submit_button.place(relx=0.30, rely=0.25) 
 
-tf_submit_button = tk.Button(left_frame, text="send waveform", command = on_submit_waveform, highlightbackground='#005B5C')
-tf_submit_button.place(relx=0.30, rely=0.3)
+# tf_submit_button = tk.Button(left_frame, text="send waveform", command = on_submit_waveform, highlightbackground='#005B5C')
+# tf_submit_button.place(relx=0.30, rely=0.3)
 
 number_label1_title = tk.Label(app, text="Pressure", font=("Comic Sans MS", 20), background='#060621', bd=2, relief="solid")
 number_label1_title.place(relx=0.102, rely=0.70)
@@ -531,8 +534,8 @@ plot_beta()
 # --------------------------------------------------------------------------------------------------------- #
 
 create_database()
-listbox = tk.Listbox(left_frame);
-listbox.place(relx=0.2, rely=0.2)
+listbox = tk.Listbox(left_frame, height=200, width=100);
+listbox.place(relx=0, rely=0.1)
 update_listbox()
 
 app.bind('<Return>', on_submit)
