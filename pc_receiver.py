@@ -155,23 +155,34 @@ def on_submit(event = None):
     global waiting_for_waveform
     command = entry.get()
     add_to_db(command)
-    if (waiting_for_waveform):
-        input_waveform = command.split(',')
-
-
-        if (len(input_waveform) == 8 and all(bool(re.search(r'\d', input_waveform))) for i in input_waveform):
-            input_waveform_ints = np.array(input_waveform, dtype=int)
+    if (waiting_for_waveform):  
+        if (command == 'cancel control'):
             waiting_for_waveform = False
-            on_submit_waveform(input_waveform_ints)
-        
-        else:
-            add_to_db("Invalid waveform input")
+            add_to_db("Exiting control loop")
+            entry.delete(0, tk.END)
+            return
+               
+        verify_waveform(command)
 
     else:
         handle_command(command)
         send_instructions(command)
     
     entry.delete(0, tk.END)
+
+# --------------------------------------------------------------------------------------------------------- #
+
+def verify_waveform(waveform):
+    global waiting_for_waveform
+    input_waveform = waveform.split(',')
+
+    if (len(input_waveform) == 8 and all(bool(re.search(r'\d', input_waveform))) for i in input_waveform):
+        input_waveform_ints = np.array(input_waveform, dtype=int)
+        waiting_for_waveform = False
+        on_submit_waveform(input_waveform_ints)
+    
+    else:
+        add_to_db("Invalid waveform input")
 
 # --------------------------------------------------------------------------------------------------------- #
 
@@ -197,6 +208,9 @@ def update_listbox():
     listbox.delete(0, tk.END)
     for row in rows:
         listbox.insert(tk.END, row[1])
+    
+    if rows:
+        listbox.see(tk.END)
 
     conn.close()
 
@@ -534,8 +548,8 @@ plot_beta()
 # --------------------------------------------------------------------------------------------------------- #
 
 create_database()
-listbox = tk.Listbox(left_frame, height=200, width=100);
-listbox.place(relx=0, rely=0.1)
+listbox = tk.Listbox(left_frame, height=21, width=33);
+listbox.place(relx=0.028, rely=0.1)
 update_listbox()
 
 app.bind('<Return>', on_submit)
