@@ -59,6 +59,7 @@ update_lock = threading.Lock()
 
 # Receiving TF Coil Current data from the pynq. It creates the listening socket, then processes
 # the data it receives constantly until the program ends, or it receives no more data
+#
 def receive_from_pynq():
     global tf_current_data_received
     global running
@@ -84,6 +85,7 @@ def receive_from_pynq():
 
 # Similar function to receive_from_pynq, except it will gather the temperature data from the pynq,
 # then process it in the same way. The graphing will happen incrementally, every 0.5 seconds or so to save memory
+#
 def receive_temp_from_pynq():
     global temperature_data
     global temperature_plot
@@ -108,6 +110,7 @@ def receive_temp_from_pynq():
 
 # this is code for the pynq probably that is sending packets, however can be used here to send
 # information for control.
+#
 def send_instructions(command):
     if isinstance(command, list):
         command = ' '.join(command)
@@ -119,17 +122,21 @@ def send_instructions(command):
 
 # --------------------------------------------------------------------------------------------------------- #
 
+# This code is similar to sen_instruction, however it is used to send the waveform to the pynq
+# It does so by setting the socket, then packing the waveform into a packet, then sending it
+#
 def send_waveform(command):
     if isinstance(command, list):
         command = ' '.join(command)
     c_sock = socket(AF_INET, SOCK_DGRAM)
-    # print("-sending",command)
     packet = command.encode()
     send_address = (HOST, ROUTER_PORT3)
     c_sock.sendto(packet, send_address)
 
 # --------------------------------------------------------------------------------------------------------- #
 
+# Clear empties out the database, removing all items from the listbox
+#
 def clear():
     conn = sqlite3.connect("names.db")
     c = conn.cursor()
@@ -141,6 +148,8 @@ def clear():
 
 # --------------------------------------------------------------------------------------------------------- #
 
+# Creates the database for the listbox, then creates the table for the names
+#
 def create_database():
     conn = sqlite3.connect("names.db")
     c = conn.cursor()
@@ -151,6 +160,16 @@ def create_database():
 
 # ---------------------------------------------------------------------------------------------------------- #
 
+# When the user types and hits enter for a command, this function is called.
+# It will recieve the command, add it to the database, then do checks
+#
+# If the previous command was to start the control loop for current, it will await the correct format,
+# (i.e. 1, 2, 3, 4, 1, 10, 10, 1) to send. If the command doesn't fit this format, it will return and await another input
+# that fits the format.
+#
+# If the command is 'cancel control', it will reset waiting_for_waveform to False, then return, allowing the user to input
+# an alternative command.
+#
 def on_submit(event = None):
     global waiting_for_waveform
     command = entry.get()
@@ -168,10 +187,17 @@ def on_submit(event = None):
         handle_command(command)
         send_instructions(command)
     
+    # Clear the entry box
     entry.delete(0, tk.END)
 
 # --------------------------------------------------------------------------------------------------------- #
 
+# This function is called when the user inputs a waveform after 'start control loop'.
+#
+# If the input is valid, then send the waveform through on_submit_waveform. 
+#
+# Else, it will add an error message to the database, then return to await another input.
+#
 def verify_waveform(waveform):
     global waiting_for_waveform
     input_waveform = waveform.split(',')
@@ -186,6 +212,9 @@ def verify_waveform(waveform):
 
 # --------------------------------------------------------------------------------------------------------- #
 
+# This function adds what the most recent command was to the database, then updates the listbox by calling
+# update_listbox
+#
 def add_to_db(name):
     conn = sqlite3.connect("names.db")
     c = conn.cursor()
@@ -198,6 +227,9 @@ def add_to_db(name):
 
 # --------------------------------------------------------------------------------------------------------- #
 
+# This function updates the listbox with the most recent commands
+# If the listbox is full, it will scroll to the bottom to show the most recent commands
+#
 def update_listbox():
     conn = sqlite3.connect("names.db")
     c = conn.cursor()
@@ -216,6 +248,9 @@ def update_listbox():
 
 # --------------------------------------------------------------------------------------------------------- #
 
+# This function takes the waveform input, then interpolates the points to create a smooth waveform.
+# This is the red line that overlaps the raw data in the graph.
+#
 def linear_interp(waveform):
     # waveform_list = waveform.split(',')
     # waveform_points_array = np.array(waveform_list, dtype=int)
@@ -231,11 +266,17 @@ def linear_interp(waveform):
 
 # --------------------------------------------------------------------------------------------------------- #
 
+# This function takes in the raw waveform, then interpolates it to create a smooth waveform.
+# Then it send it to the pynq to control the current.
+#
 def on_submit_waveform(waveform):
     # waveform = entry.get()
     interpolated = linear_interp(waveform)
     send_waveform(interpolated)
 
+# This function is called when the user inputs a waveform after 'start control loop'.
+# It sets waiting_for_waveform to True, making on_submit aware that it is waiting for a waveform.
+#
 def prompt_for_waveform():
     global waiting_for_waveform
     waiting_for_waveform = True
@@ -247,6 +288,14 @@ def prompt_for_waveform():
 # --------------------------------------------------------------------------------------------------------- #
     
 # hopefully this function is cohesive enough that it works for plot alpha and beta
+# This function is called every 0.1 seconds to update the plot with the most recent data
+# It will lock the update_lock, then check if the data is valid and for which plot it is for.
+#
+# If the data is valid, it will clear the plot, then plot the raw data and the smoothed data.
+# The lock is then released, allowing another thread to access the data.
+# This was done so that the data is not accessed by multiple threads at once, causing
+# the plots to be incorrect.
+#
 def update_plot(plotted, parent_plot):
     update_lock.acquire()
     try:
@@ -274,7 +323,10 @@ def update_plot(plotted, parent_plot):
 
 # --------------------------------------------------------------------------------------------------------- #
 
-# rename to plot_alpha. need to extend functionality to be interchangeable graphs with different data
+# This is the main function for one of the plots. It creates the plot, sets the colours, and then awaits data
+# to plot. It will plot the raw data and the smoothed data. This plot interacts with the alpha_plot_data dropdown menu
+# which allows the user to switch between plotting the current and the temperature.
+#
 def plot_alpha():    
     fig = Figure(figsize = (4, 3), dpi = 100)
     fig.set_facecolor('#1D1D1D')
@@ -309,6 +361,15 @@ def plot_alpha():
     
     app.after(DEFAULT_UPDATE_RATE, lambda: update_plot(plotted, "alpha"))
     
+# This plot is the same as plot_alpha, except it is for the beta plot.
+# The reason it is done separately is so that the user can switch between the two plots and 
+# the data is not mixed up. It is also because having multiple plot functions will allow easier 
+# debugging and readability.
+#
+# The downside is that there is a lot of repeated code, which could be refactored into a single function
+# that takes in the data to plot and the plot to plot it on. This has it's own issues, so for now, this
+# is the best solution.
+#
 def plot_beta():    
     fig = Figure(figsize = (4, 3), dpi = 100)
     fig.set_facecolor('#1D1D1D')
@@ -344,6 +405,8 @@ def plot_beta():
 
 # --------------------------------------------------------------------------------------------------------- #
 
+# This function is called when the user switches between plotting the current and the temperature.
+# It simply switches the data the plots access to plot the correct data.
 def switch_plot_alpha():
     global y_alpha
     data_to_plot = alpha_plot_data.get()
@@ -352,6 +415,7 @@ def switch_plot_alpha():
     elif (data_to_plot == "Temperature"):
         y_alpha = temperature_data
     
+# This function is the same as switch_plot_alpha, except it is for the beta plot.
 def switch_plot_beta():
     global y_beta
     data_to_plot = beta_plot_data.get()
@@ -362,6 +426,10 @@ def switch_plot_beta():
 
 # --------------------------------------------------------------------------------------------------------- #
 
+# This function is called when the user inputs 'pressure test'. It sets up a listening socket to receive
+# the pressure data from the pynq, then displays it on the GUI. It will constantly update the pressure data
+# until the program ends.
+#
 def receive_pressure():
     # set up listening sockets
     s_sock = socket(AF_INET, SOCK_DGRAM)
@@ -375,10 +443,11 @@ def receive_pressure():
         with contextlib.suppress(timeout):
             msg, _ = s_sock.recvfrom(1024)
             decoded_lsp = msg.decode()
-            number_label1.config(text=decoded_lsp)
+            pressure_value_label.config(text=decoded_lsp)
 
 # --------------------------------------------------------------------------------------------------------- #
 
+# This function is called every 0.1 seconds to check if the threads are still running.
 def check_threads():
     global app
     if not tf_current_data_thread.is_alive() and not temperature_data_thread.is_alive():
@@ -387,6 +456,8 @@ def check_threads():
     
 # --------------------------------------------------------------------------------------------------------- #
 
+# This function is called at the beginning, creating the database for the listbox.
+#
 def create_database():
     conn = sqlite3.connect("names.db")
     c = conn.cursor()
@@ -395,6 +466,9 @@ def create_database():
     conn.commit()
     conn.close()
 
+# This function is also called at the beginning and when the user inputs the 'clear' command. It empties the database
+# and updates the listbox to show that it is empty.
+#
 def clearDB():
     conn = sqlite3.connect("names.db")
     c = conn.cursor()
@@ -408,6 +482,8 @@ def clearDB():
 
 # --------------------------------------------------------------------------------------------------------- #
 
+# Ends the threads and closes the program.
+#
 def exit():
     global running
     running = 0
@@ -415,7 +491,8 @@ def exit():
 
 # --------------------------------------------------------------------------------------------------------- #
 
-# programs title
+# Programs title
+#
 app = tk.Tk()
 app.title("AtomCraft Controller")
 app.geometry("1440x900")
@@ -424,16 +501,6 @@ app.geometry("1440x900")
 # --------------------------------------------------------------------------------------------------------- #
 
 # Making program frames
-
-# for 19201080 res
-# plot_frame = tk.Frame(app, width=1425, height=695, bg="lightgrey", bd=1, relief="solid")
-# plot_frame.place(relx=0.26, rely=0)
-
-# left_frame = tk.Frame(app, width=495, height=695, bg="darkgrey", bd=1, relief="solid")
-# left_frame.place(relx=0, rely=0)
-
-# bottom_frame = tk.Frame(app, width=1920, height=485, bg="grey", bd=1, relief="solid")
-# bottom_frame.place(relx=0, rely=0.644)
 
 # for 1440x900 res
 plot_frame = tk.Frame(app, width=10000, height=695, bg="#1D1D1D", bd=1, relief="solid")
@@ -472,27 +539,15 @@ canvas2.create_line(1, 1, 1.5, 695, fill="black")
 
 
 # just a simple label
-# label = tk.Label(left_frame, text="Enter 4 points to outline tf coil current\n(1st is commands, 2nd is waveform)", background='darkgrey', fg='black', font=("Comic Sans MS", 15), bd=2, relief="solid")
-# label.place(relx=0.10, rely=0.075)
 
 entry = tk.Entry(left_frame, highlightbackground='#005B5C')
 entry.place(relx=0.20, rely=0.05) 
 
-# tf_entry = tk.Entry(left_frame, highlightbackground='#005B5C')
-# tf_entry.place(relx=0.20, rely=0.2) 
+pressure_title = tk.Label(app, text="Pressure", font=("Verdana", 20), background='#060621', bd=2, relief="solid")
+pressure_title.place(relx=0.102, rely=0.70)
 
-# simple button to submit whatever
-# submit_button = tk.Button(left_frame, text="send command", command = on_submit, highlightbackground='#005B5C')
-# submit_button.place(relx=0.30, rely=0.25) 
-
-# tf_submit_button = tk.Button(left_frame, text="send waveform", command = on_submit_waveform, highlightbackground='#005B5C')
-# tf_submit_button.place(relx=0.30, rely=0.3)
-
-number_label1_title = tk.Label(app, text="Pressure", font=("Verdana", 20), background='#060621', bd=2, relief="solid")
-number_label1_title.place(relx=0.102, rely=0.70)
-
-number_label1 = tk.Label(app, text="0.00", font=("Verdana", 48), background='#060621', bd=2, relief="solid")
-number_label1.place(relx=0.095, rely=0.75)
+pressure_value_label = tk.Label(app, text="0.00", font=("Verdana", 48), background='#060621', bd=2, relief="solid")
+pressure_value_label.place(relx=0.095, rely=0.75)
 
 number_label2_title = tk.Label(app, text="Measurement 2", font=("Verdana", 20), background='#060621', bd=2, relief="solid")
 number_label2_title.place(relx=0.33, rely=0.70)
@@ -514,6 +569,8 @@ number_label4.place(relx=0.845, rely=0.75)
 
 # --------------------------------------------------------------------------------------------------------- #
 
+# All dropdown menus for the graphs (both alpha and beta)
+#
 alpha_dd_menu = ["Current", "Temperature"]
 
 # dd for plot_alpha
@@ -547,6 +604,8 @@ plot_beta()
 
 # --------------------------------------------------------------------------------------------------------- #
 
+# Initialises the database and listbox, and binds the enter key to the on_submit function
+#
 create_database()
 listbox = tk.Listbox(left_frame, height=25, width=33)
 listbox.place(relx=0.028, rely=0.1)
@@ -556,6 +615,8 @@ app.bind('<Return>', on_submit)
 
 # --------------------------------------------------------------------------------------------------------- #
 
+# Exit button for the GUI
+#
 exit_button = tk.Button(app, text="Exit (gracefully)", command = exit, highlightbackground='#1D1D1D')
 exit_button.place(relx=0.9, rely=0.025) 
 
@@ -566,7 +627,8 @@ def handle_pynq_commands():
 
 # --------------------------------------------------------------------------------------------------------- #
 
-
+# List of commands that the user can input (This will be updated as more integrations are added)
+#
 commands = {
     "clear": clearDB,
     "start control loop": prompt_for_waveform,
@@ -582,7 +644,8 @@ def handle_command(command):
 
 # --------------------------------------------------------------------------------------------------------- #
 
-
+# Main function that creates and starts the threads, then starts the GUI
+#
 if __name__ == "__main__":
     # set up all threads that we want to exist
     tf_current_data_thread = threading.Thread(target = receive_from_pynq)
