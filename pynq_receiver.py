@@ -43,6 +43,10 @@ mapped_waveform = []
 
 # --------------------------------------------------------------------------------------------------------- #
 
+# Function that creates a receiving socket and listens for commmands
+# It sends the command to the hand_command fucntio which the executes the correct function
+# according to the command.
+#
 def receive_commands():
     global data_received
 
@@ -61,6 +65,9 @@ def receive_commands():
 
 # --------------------------------------------------------------------------------------------------------- #
 
+# This is the receiver for the waveform data. It creates the receiving socket and listens for the waveform
+# data. It then sends it to the drive_tf_current function which will map the data and send it to the PC.
+#
 def receive_waveform():
     global data_received
     global next_waveform
@@ -76,16 +83,11 @@ def receive_waveform():
         decoded_lsp = msg.decode()
         ref_current_map = decoded_lsp.split()
         drive_tf_current(ref_current_map)
-        # next_waveform = (list(float, ref_current_map))
-
-    # put the list of current values into data_received
-
-
-    # idk why you're listening for command i'll just comment for now
-    # handle_command(command_list)
 
 # --------------------------------------------------------------------------------------------------------- #
 
+# Function that maps the received data to the pmod port values. 
+# 
 def map_pynq_pmod(reference_current):
     # Convert all elements to float
     reference_current = [float(x) for x in reference_current]
@@ -106,15 +108,15 @@ def map_pynq_pmod(reference_current):
 
 # --------------------------------------------------------------------------------------------------------- #
 
+# This is where the PYNQ code will go using the mapped waveform, for now we will just send it back to the PC
+# as a test.
+# What we do here is some mapping and that to of the received linearly interpolated data and drive that
+# through the pmod port to the current control system. just placeholder for now.
+#
 def drive_tf_current(reference_current):
     global mapped_waveform
-    # what we do here is some mapping and that to of the received linearly interpolated data and drive that
-    # through the pmod port to the current control system. just placeholder for now.
     mapped_waveform = map_pynq_pmod(reference_current)
     send_data()
-    
-    # This is where the PYNQ code will go using the mapped waveform, for now we will just send it back to the PC
-    # print("Mapped waveform:", mapped_waveform)
         
 # --------------------------------------------------------------------------------------------------------- #
 
@@ -136,9 +138,10 @@ def map_float_to_value(current_time):
 # --------------------------------------------------------------------------------------------------------- #
 
 
-# this is code for the pynq probably that is sending packets, however can be used here to send
+# This is code for the pynq probably that is sending packets, however can be used here to send
 # information for control actually (may or may not work). Again just copied my own old code
 # will need restructuring to do what we want it to.
+#
 def send_data():
     global mapped_waveform
     c_sock = socket(AF_INET, SOCK_DGRAM)
@@ -209,6 +212,9 @@ def placeholder_pressure_starter():
 
 # --------------------------------------------------------------------------------------------------------- #
 
+# List of commands that can be interpreted by the pynq. It is different to the PC commands
+# since the pynq will be handling different things.
+#
 commands = {
     # "start control loop": start_send_thread,
     "temperature test": placeholder_temperature_starter,
@@ -224,6 +230,8 @@ def handle_command(command):
 
 # --------------------------------------------------------------------------------------------------------- #
 
+# Main function that starts the threads and runs the program.
+#
 if __name__ == "__main__":
 
     # set up all threads that we want to exist
