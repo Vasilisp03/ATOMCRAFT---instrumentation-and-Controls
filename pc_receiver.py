@@ -31,11 +31,11 @@ ROUTER_PORT3 = 1400
 HOST2 = '127.0.0.1'
 
 # Receive Temp address
-ROUTER_PORT4 = 1500
-HOST = '127.0.0.1'
+ROUTER_PORT4 = 2000
+HOST_WIFI = '192.168.0.28'
 
 # Receive Temp address
-ROUTER_PORT5 = 1600
+ROUTER_PORT5 = 2020
 HOST = '127.0.0.1'
 
 # Other constants
@@ -92,7 +92,7 @@ def receive_temp_from_pynq():
 
     # set up listening sockets
     s_sock = socket(AF_INET, SOCK_DGRAM)
-    address = (HOST, ROUTER_PORT4)
+    address = (HOST_WIFI, ROUTER_PORT4)
     s_sock.bind(address)
     s_sock.settimeout(1)
     print(f'Listening on port:{ROUTER_PORT4}')
@@ -433,7 +433,7 @@ def switch_plot_beta():
 def receive_pressure():
     # set up listening sockets
     s_sock = socket(AF_INET, SOCK_DGRAM)
-    address = (HOST, ROUTER_PORT5)
+    address = (HOST_WIFI, ROUTER_PORT5)
     s_sock.bind(address)
     s_sock.settimeout(1)
     print(f'Listening on port:{ROUTER_PORT5}')
