@@ -15,12 +15,15 @@ def send_command(command):
         print("No response from Arduino")
 
 while True:
-    prompt = input("Enter 'o' to open solenoid or 'q' to quit: ")
+    prompt = input("Enter 'o' to open solenoid, 'i' to update solenoid time or 'q' to quit: ")
     if prompt == "q":
         break
     
     if prompt == "o":
-        cmd = input("Enter duration the valve will be open for in ms: ")
+        cmd = prompt
+        send_command(cmd)
+    elif prompt == "i":
+        cmd = input("Enter duration of solenoid opening: ")
         send_command(cmd)
     else:
         print("Invalid command")
