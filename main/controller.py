@@ -2,7 +2,7 @@ import tkinter as tk
 import sqlite3
 
 def clear():
-    conn = sqlite3.connect("names.db")
+    conn = sqlite3.connect("data/names.db")
     c = conn.cursor()
 
     c.execute("DELETE FROM names")
@@ -15,7 +15,7 @@ def clear():
 
 
 def create_database():
-    conn = sqlite3.connect("names.db")
+    conn = sqlite3.connect("data/names.db")
     c = conn.cursor()
 
     c.execute("""CREATE TABLE IF NOT EXISTS names (
@@ -29,7 +29,7 @@ create_database()
 
 def on_submit():
     name = entry.get()
-    conn = sqlite3.connect("names.db")
+    conn = sqlite3.connect("data/names.db")
     c = conn.cursor()
 
     c.execute("INSERT INTO names (name) VALUES (?)", (name,))
@@ -39,7 +39,7 @@ def on_submit():
     update_listbox()
 
 def update_listbox():
-    conn = sqlite3.connect("names.db")
+    conn = sqlite3.connect("data/names.db")
     c = conn.cursor()
 
     c.execute("SELECT * FROM names")

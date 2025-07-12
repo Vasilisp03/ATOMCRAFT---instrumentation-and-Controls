@@ -11,7 +11,8 @@ from collections import defaultdict
 import tkinter as tk
 import sqlite3
 from matplotlib.figure import Figure 
-from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.backends._backend_tk import NavigationToolbar2Tk
 import numpy as np
 from scipy.signal import savgol_filter 
 from scipy.interpolate import interp1d
@@ -138,7 +139,7 @@ def send_waveform(command):
 # Clear empties out the database, removing all items from the listbox
 #
 def clear():
-    conn = sqlite3.connect("names.db")
+    conn = sqlite3.connect("data/names.db")
     c = conn.cursor()
 
     c.execute("DELETE FROM names")
@@ -151,7 +152,7 @@ def clear():
 # Creates the database for the listbox, then creates the table for the names
 #
 def create_database():
-    conn = sqlite3.connect("names.db")
+    conn = sqlite3.connect("data/names.db")
     c = conn.cursor()
 
     c.execute("""CREATE TABLE IF NOT EXISTS names (id INTEGER PRIMARY KEY,name TEXT)""")
@@ -202,7 +203,7 @@ def verify_waveform(waveform):
     global waiting_for_waveform
     input_waveform = waveform.split(',')
 
-    if (len(input_waveform) == 8 and all(bool(re.search(r'\d', input_waveform))) for i in input_waveform):
+    if (len(input_waveform) == 8 and all(bool(re.search(r'\d', i)) for i in input_waveform)):
         input_waveform_ints = np.array(input_waveform, dtype=int)
         waiting_for_waveform = False
         on_submit_waveform(input_waveform_ints)
@@ -216,7 +217,7 @@ def verify_waveform(waveform):
 # update_listbox
 #
 def add_to_db(name):
-    conn = sqlite3.connect("names.db")
+    conn = sqlite3.connect("data/names.db")
     c = conn.cursor()
 
     c.execute("INSERT INTO names (name) VALUES (?)", (name,))
@@ -231,7 +232,7 @@ def add_to_db(name):
 # If the listbox is full, it will scroll to the bottom to show the most recent commands
 #
 def update_listbox():
-    conn = sqlite3.connect("names.db")
+    conn = sqlite3.connect("data/names.db")
     c = conn.cursor()
 
     c.execute("SELECT * FROM names")
@@ -458,19 +459,19 @@ def check_threads():
 
 # This function is called at the beginning, creating the database for the listbox.
 #
-def create_database():
-    conn = sqlite3.connect("names.db")
-    c = conn.cursor()
+# def create_database():
+#     conn = sqlite3.connect("data/names.db")
+#     c = conn.cursor()
 
-    c.execute("""CREATE TABLE IF NOT EXISTS names (id INTEGER PRIMARY KEY,name TEXT)""")
-    conn.commit()
-    conn.close()
+#     c.execute("""CREATE TABLE IF NOT EXISTS names (id INTEGER PRIMARY KEY,name TEXT)""")
+#     conn.commit()
+#     conn.close()
 
 # This function is also called at the beginning and when the user inputs the 'clear' command. It empties the database
 # and updates the listbox to show that it is empty.
 #
 def clearDB():
-    conn = sqlite3.connect("names.db")
+    conn = sqlite3.connect("data/names.db")
     c = conn.cursor()
 
     c.execute("DELETE FROM names")
