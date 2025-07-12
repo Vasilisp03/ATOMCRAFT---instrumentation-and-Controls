@@ -3,6 +3,10 @@ venv/
 venv/lib/python3.12/site-packages/scipy-1.14.0.dist-info/
 venv/lib/python3.12/site-packages/*
 .venv/lib/python3.12/site-packages/__pycache__/*
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 data/*.db
 .DS_Store
 .vscode/
